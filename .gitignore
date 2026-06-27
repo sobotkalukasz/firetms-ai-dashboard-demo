@@ -6,7 +6,7 @@
 target/
 
 # Vaadin generated frontend
-src/main/frontend/
+src/main/frontend/generated
 
 # Java
 *.class
