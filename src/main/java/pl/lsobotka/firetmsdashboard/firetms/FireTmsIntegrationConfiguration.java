@@ -11,9 +11,8 @@ import pl.lsobotka.firetmsdashboard.firetms.salesinvoices.FireTmsSalesInvoiceCli
 public class FireTmsIntegrationConfiguration {
 
     @Bean
-    FireTmsSalesInvoiceClient fireTmsSalesInvoiceClient(RestClient.Builder restClientBuilder, ObjectMapper objectMapper,
-            FireTmsProperties properties) {
-        RestClient restClient = restClientBuilder.baseUrl(properties.baseUrl()).build();
+    FireTmsSalesInvoiceClient fireTmsSalesInvoiceClient(ObjectMapper objectMapper, FireTmsProperties properties) {
+        RestClient restClient = RestClient.builder().baseUrl(properties.baseUrl()).build();
         return new FireTmsSalesInvoiceClient(restClient, objectMapper, properties, ZoneId.systemDefault());
     }
 }
