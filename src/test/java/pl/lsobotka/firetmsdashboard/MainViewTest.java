@@ -2,19 +2,24 @@ package pl.lsobotka.firetmsdashboard;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.H3;
 import org.junit.jupiter.api.Test;
 
 class MainViewTest {
 
     @Test
-    void displaysDashboardHeading() {
+    void displaysDrawerNavigationForFireTmsInvoices() {
         MainView view = new MainView();
 
-        Component heading = view.getComponentAt(0);
+        H3 invoicesGroup = view.getInvoicesGroup();
+        Anchor issuedLink = view.getIssuedLink();
+        H1 heading = (H1) ((com.vaadin.flow.component.orderedlayout.VerticalLayout) view.getContent()).getComponentAt(0);
 
-        assertThat(heading).isInstanceOf(H1.class);
-        assertThat(((H1) heading).getText()).isEqualTo("FireTMS AI Dashboard Demo");
+        assertThat(invoicesGroup.getText()).isEqualTo("Invoices");
+        assertThat(issuedLink.getText()).isEqualTo("Issued");
+        assertThat(issuedLink.getHref()).isEqualTo("/firetms/sales-invoices");
+        assertThat(heading.getText()).isEqualTo("FireTMS AI Dashboard Demo");
     }
 }
