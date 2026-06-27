@@ -4,18 +4,18 @@ import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import java.time.LocalDate;
+import pl.lsobotka.firetmsdashboard.MainView;
 import pl.lsobotka.firetmsdashboard.firetms.FireTmsClientException;
 import pl.lsobotka.firetmsdashboard.firetms.salesinvoices.FireTmsIssuedSalesInvoicesResponse;
 import pl.lsobotka.firetmsdashboard.firetms.salesinvoices.FireTmsSalesInvoiceClient;
 
-@Route("firetms/sales-invoices")
+@Route(value = MainView.ISSUED_ROUTE, layout = MainView.class)
 @PageTitle("FireTMS Sales Invoices")
 public class FireTmsSalesInvoicesView extends VerticalLayout {
 
@@ -50,7 +50,6 @@ public class FireTmsSalesInvoicesView extends VerticalLayout {
         Button fetchButton = new Button("Fetch issued sales invoices", event -> fetchInvoices(client));
 
         add(
-                new H2("FireTMS sales invoices spike"),
                 apiKeyField,
                 dateFromField,
                 dateToField,
