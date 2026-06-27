@@ -10,7 +10,6 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -18,7 +17,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 import pl.lsobotka.firetmsdashboard.firetms.FireTmsClientException;
 import pl.lsobotka.firetmsdashboard.firetms.FireTmsProperties;
 
-@Component
 public class FireTmsSalesInvoiceClient {
 
     private static final String API_KEY_HEADER = "apikey";
@@ -30,12 +28,8 @@ public class FireTmsSalesInvoiceClient {
     private final FireTmsProperties properties;
     private final ZoneId zoneId;
 
-    public FireTmsSalesInvoiceClient(RestClient.Builder restClientBuilder, ObjectMapper objectMapper,
-            FireTmsProperties properties) {
-        this(restClientBuilder.build(), objectMapper, properties, ZoneId.systemDefault());
-    }
-
-    FireTmsSalesInvoiceClient(RestClient restClient, ObjectMapper objectMapper, FireTmsProperties properties, ZoneId zoneId) {
+    public FireTmsSalesInvoiceClient(RestClient restClient, ObjectMapper objectMapper, FireTmsProperties properties,
+            ZoneId zoneId) {
         this.restClient = restClient;
         this.objectMapper = objectMapper;
         this.properties = properties;
@@ -65,7 +59,7 @@ public class FireTmsSalesInvoiceClient {
             return new FireTmsIssuedSalesInvoicesResponse(
                     rawJson,
                     readOptionalInt(payload, "totalItems"),
-                    readOptionalInt(payload.path("items").isArray() ? payload.path("items").size() : null),
+                    payload.path("items").isArray() ? payload.path("items").size() : null,
                     payload);
         } catch (JsonProcessingException exception) {
             throw new FireTmsClientException("FireTMS returned a response that could not be parsed", exception);
@@ -100,9 +94,5 @@ public class FireTmsSalesInvoiceClient {
             return null;
         }
         return node.get(fieldName).intValue();
-    }
-
-    private Integer readOptionalInt(Integer value) {
-        return value;
     }
 }
