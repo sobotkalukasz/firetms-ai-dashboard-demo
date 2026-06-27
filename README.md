@@ -17,4 +17,12 @@ Demo application for experimenting with FireTMS API data, Vaadin Grids, charts, 
 
 ## Local development
 
-Details will be added as the project is implemented.
+The app defaults to the `dev` Spring profile. Run it locally with:
+
+```bash
+./mvnw spring-boot:run
+```
+
+The `dev` profile uses a file-based H2 database at `./data/firetms-dashboard-db`.
+The H2 console is available at `http://localhost:8080/h2-console` with JDBC URL
+`jdbc:h2:file:./data/firetms-dashboard-db`, user `sa`, and a blank password.
