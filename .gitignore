@@ -5,8 +5,12 @@
 # Maven
 target/
 
+# Vaadin generated frontend
+src/main/frontend/
+
 # Java
 *.class
+.java-version
 
 # Logs
 *.log
@@ -23,5 +27,6 @@ Thumbs.db
 
 # Environment / local overrides
 .env
+.envrc
 application-local.yml
 application-local.yaml
