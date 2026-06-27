@@ -1,0 +1,27 @@
+# IDE
+.idea/
+*.iml
+
+# Maven
+target/
+
+# Java
+*.class
+
+# Logs
+*.log
+
+# Local application data
+data/
+*.db
+*.mv.db
+*.trace.db
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment / local overrides
+.env
+application-local.yml
+application-local.yaml
