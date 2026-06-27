@@ -5,9 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.util.StringUtils;
@@ -21,19 +18,15 @@ public class FireTmsSalesInvoiceClient {
 
     private static final String API_KEY_HEADER = "apikey";
     private static final String SALES_INVOICES_PATH = "/invoices/sales/issued";
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
     private final FireTmsProperties properties;
-    private final ZoneId zoneId;
 
-    public FireTmsSalesInvoiceClient(RestClient restClient, ObjectMapper objectMapper, FireTmsProperties properties,
-            ZoneId zoneId) {
+    public FireTmsSalesInvoiceClient(RestClient restClient, ObjectMapper objectMapper, FireTmsProperties properties) {
         this.restClient = restClient;
         this.objectMapper = objectMapper;
         this.properties = properties;
-        this.zoneId = zoneId;
     }
 
     public FireTmsIssuedSalesInvoicesResponse fetchIssuedSalesInvoices(String apiKey, LocalDate dateFrom, LocalDate dateTo) {
@@ -69,24 +62,14 @@ public class FireTmsSalesInvoiceClient {
     }
 
     URI buildIssuedSalesInvoicesUri(LocalDate dateFrom, LocalDate dateTo) {
-        // TODO: The initial UI maps the selected range to issue-date filters only.
-        // If users need sale-date filtering, expose dateOfSaleFrom/dateOfSaleTo in the UI as a separate option.
+        // TODO: FireTMS OpenAPI describes these as date-time fields, but the live endpoint
+        // currently accepts plain ISO dates such as 2026-05-20 for this resource.
         return UriComponentsBuilder.fromUriString(properties.baseUrl())
                 .path(SALES_INVOICES_PATH)
-                .queryParam("dateOfIssueFrom", formatStartOfDay(dateFrom))
-                .queryParam("dateOfIssueTo", formatEndOfDay(dateTo))
+                .queryParam("dateOfIssueFrom", dateFrom)
+                .queryParam("dateOfIssueTo", dateTo)
                 .build(true)
                 .toUri();
-    }
-
-    private String formatStartOfDay(LocalDate date) {
-        OffsetDateTime dateTime = date.atStartOfDay(zoneId).toOffsetDateTime();
-        return DATE_TIME_FORMATTER.format(dateTime);
-    }
-
-    private String formatEndOfDay(LocalDate date) {
-        OffsetDateTime dateTime = date.plusDays(1).atStartOfDay(zoneId).minusNanos(1).toOffsetDateTime();
-        return DATE_TIME_FORMATTER.format(dateTime);
     }
 
     private Integer readOptionalInt(JsonNode node, String fieldName) {
