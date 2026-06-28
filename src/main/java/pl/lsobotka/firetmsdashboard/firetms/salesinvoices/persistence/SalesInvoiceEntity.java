@@ -34,11 +34,17 @@ public class SalesInvoiceEntity {
     @Column(name = "contractor_name")
     private String contractorName;
 
+    @Column(name = "ksef_number")
+    private String ksefNumber;
+
     @Column(name = "net_amount", precision = 19, scale = 2)
     private BigDecimal netAmount;
 
     @Column(name = "gross_amount", precision = 19, scale = 2)
     private BigDecimal grossAmount;
+
+    @Column(name = "outstanding_to_pay", precision = 19, scale = 2)
+    private BigDecimal outstandingToPay;
 
     @Column(name = "currency")
     private String currency;
@@ -97,6 +103,14 @@ public class SalesInvoiceEntity {
         this.contractorName = contractorName;
     }
 
+    public String getKsefNumber() {
+        return ksefNumber;
+    }
+
+    public void setKsefNumber(String ksefNumber) {
+        this.ksefNumber = ksefNumber;
+    }
+
     public BigDecimal getNetAmount() {
         return netAmount;
     }
@@ -111,6 +125,14 @@ public class SalesInvoiceEntity {
 
     public void setGrossAmount(BigDecimal grossAmount) {
         this.grossAmount = grossAmount;
+    }
+
+    public BigDecimal getOutstandingToPay() {
+        return outstandingToPay;
+    }
+
+    public void setOutstandingToPay(BigDecimal outstandingToPay) {
+        this.outstandingToPay = outstandingToPay;
     }
 
     public String getCurrency() {

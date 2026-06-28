@@ -99,8 +99,10 @@ public class SalesInvoiceSyncService {
         invoice.setIssueDate(imported.issueDate());
         invoice.setSaleDate(imported.saleDate());
         invoice.setContractorName(imported.contractorName());
+        invoice.setKsefNumber(imported.ksefNumber());
         invoice.setNetAmount(imported.netAmount());
         invoice.setGrossAmount(imported.grossAmount());
+        invoice.setOutstandingToPay(imported.outstandingToPay());
         invoice.setCurrency(imported.currency());
         invoice.setStatus(imported.status());
         invoice.setRawJson(imported.rawJson());

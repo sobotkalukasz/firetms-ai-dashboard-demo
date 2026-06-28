@@ -11,8 +11,10 @@ public record SalesInvoiceRow(
         LocalDate issueDate,
         LocalDate saleDate,
         String contractorName,
+        String ksefNumber,
         BigDecimal netAmount,
         BigDecimal grossAmount,
+        BigDecimal outstandingToPay,
         String currency,
         String status,
         LocalDateTime updatedAt) {
@@ -24,8 +26,10 @@ public record SalesInvoiceRow(
                 invoice.getIssueDate(),
                 invoice.getSaleDate(),
                 invoice.getContractorName(),
+                invoice.getKsefNumber(),
                 invoice.getNetAmount(),
                 invoice.getGrossAmount(),
+                invoice.getOutstandingToPay(),
                 invoice.getCurrency(),
                 invoice.getStatus(),
                 invoice.getUpdatedAt());

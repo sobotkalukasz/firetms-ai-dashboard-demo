@@ -46,6 +46,8 @@ class SalesInvoiceSyncServiceTest {
                       "issuanceDate": "2019-06-28T08:21:08.087+02:00",
                       "sellDate": "2019-06-29T08:20:08.087+02:00",
                       "client": {"companyName": "Agm Group Sp.z.o.o"},
+                      "ksefNumber": {"number": "9999999999-IZ202602-FFFFFFFFFFFF-FF"},
+                      "outstandingToPay": {"amount": 900.25, "currencyCode": "EUR"},
                       "status": "ISSUED",
                       "totalGross": {"amount": 10500, "currencyCode": "EUR"},
                       "totalNet": {"amount": 10500, "currencyCode": "EUR"}
@@ -85,8 +87,10 @@ class SalesInvoiceSyncServiceTest {
         assertThat(invoice.getIssueDate()).isEqualTo(LocalDate.of(2019, 6, 28));
         assertThat(invoice.getSaleDate()).isEqualTo(LocalDate.of(2019, 6, 29));
         assertThat(invoice.getUpdatedAt()).isEqualTo(java.time.LocalDateTime.of(2026, 6, 28, 10, 15, 30));
+        assertThat(invoice.getKsefNumber()).isEqualTo("9999999999-IZ202602-FFFFFFFFFFFF-FF");
         assertThat(invoice.getNetAmount()).isEqualByComparingTo("10500");
         assertThat(invoice.getGrossAmount()).isEqualByComparingTo("10500");
+        assertThat(invoice.getOutstandingToPay()).isEqualByComparingTo("900.25");
         assertThat(invoice.getRawJson()).contains("\"documentNumber\":\"0002/06/2019\"");
     }
 
@@ -129,6 +133,8 @@ class SalesInvoiceSyncServiceTest {
                       "issuanceDate": "2019-06-28T08:21:08.087+02:00",
                       "sellDate": "2019-06-29T08:20:08.087+02:00",
                       "client": {"companyName": "Existing Client"},
+                      "ksefNumber": {"number": "KSEF-EXISTING"},
+                      "outstandingToPay": {"amount": 50, "currencyCode": "PLN"},
                       "status": "ISSUED",
                       "totalGross": {"amount": 200, "currencyCode": "PLN"},
                       "totalNet": {"amount": 100, "currencyCode": "PLN"}
@@ -157,5 +163,7 @@ class SalesInvoiceSyncServiceTest {
         assertThat(result.updatedInvoices()).isEqualTo(1);
         assertThat(existing.getInvoiceNumber()).isEqualTo("0003/06/2019");
         assertThat(existing.getContractorName()).isEqualTo("Existing Client");
+        assertThat(existing.getKsefNumber()).isEqualTo("KSEF-EXISTING");
+        assertThat(existing.getOutstandingToPay()).isEqualByComparingTo("50");
     }
 }

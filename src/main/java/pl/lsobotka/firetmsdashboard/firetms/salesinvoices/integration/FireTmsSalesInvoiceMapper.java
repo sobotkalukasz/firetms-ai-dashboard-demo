@@ -42,8 +42,10 @@ public class FireTmsSalesInvoiceMapper {
                 readDate(item, "issuanceDate"),
                 readDate(item, "sellDate"),
                 readText(item, "client.companyName"),
+                readText(item, "ksefNumber.number"),
                 readDecimal(item, "totalNet.amount"),
                 readDecimal(item, "totalGross.amount"),
+                readDecimal(item, "outstandingToPay.amount"),
                 readText(item, "totalGross.currencyCode"),
                 readText(item, "status"),
                 item.toString());

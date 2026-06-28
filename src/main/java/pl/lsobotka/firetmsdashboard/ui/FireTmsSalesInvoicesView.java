@@ -106,8 +106,10 @@ public class FireTmsSalesInvoicesView extends VerticalLayout {
         invoicesGrid.addColumn(SalesInvoiceRow::issueDate).setHeader("Issue date").setAutoWidth(true).setSortable(true);
         invoicesGrid.addColumn(SalesInvoiceRow::saleDate).setHeader("Sale date").setAutoWidth(true).setSortable(true);
         invoicesGrid.addColumn(SalesInvoiceRow::contractorName).setHeader("Contractor name").setAutoWidth(true).setFlexGrow(1);
+        invoicesGrid.addColumn(SalesInvoiceRow::ksefNumber).setHeader("KSeF number").setAutoWidth(true);
         invoicesGrid.addColumn(SalesInvoiceRow::netAmount).setHeader("Net amount").setAutoWidth(true);
         invoicesGrid.addColumn(SalesInvoiceRow::grossAmount).setHeader("Gross amount").setAutoWidth(true);
+        invoicesGrid.addColumn(SalesInvoiceRow::outstandingToPay).setHeader("Outstanding to pay").setAutoWidth(true);
         invoicesGrid.addColumn(SalesInvoiceRow::currency).setHeader("Currency").setAutoWidth(true);
         invoicesGrid.addColumn(SalesInvoiceRow::status).setHeader("Status").setAutoWidth(true);
         invoicesGrid.addColumn(this::formatUpdatedAt).setHeader("Updated at").setAutoWidth(true).setSortable(true);
