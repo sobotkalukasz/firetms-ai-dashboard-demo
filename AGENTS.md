@@ -42,6 +42,8 @@ The FireTMS API key is provided by the user through the UI, not through local en
 - Keep the raw API response JSON for imported records when practical.
 - Add or update tests for business logic.
 - Use JUnit 5.
+- Update README.MD as needed.
+- update .gitignore as needed.
 
 ## Validation
 
