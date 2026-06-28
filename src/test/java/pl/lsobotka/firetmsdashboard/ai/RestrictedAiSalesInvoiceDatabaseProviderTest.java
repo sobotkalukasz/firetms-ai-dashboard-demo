@@ -114,4 +114,21 @@ class RestrictedAiSalesInvoiceDatabaseProviderTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("ai_sales_invoice_view");
     }
+
+    @Test
+    void rejectsMultipleStatementsAndComments() {
+        assertThatThrownBy(() -> provider.executeQuery("""
+                select invoice_number
+                from ai_sales_invoice_view;
+                """))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("single SQL statement");
+
+        assertThatThrownBy(() -> provider.executeQuery("""
+                select invoice_number
+                from ai_sales_invoice_view -- hidden write
+                """))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("comments");
+    }
 }
