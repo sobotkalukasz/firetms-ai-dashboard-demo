@@ -9,14 +9,18 @@ import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+
 import java.time.LocalDate;
 import pl.lsobotka.firetmsdashboard.MainView;
 import pl.lsobotka.firetmsdashboard.firetms.FireTmsClientException;
 import pl.lsobotka.firetmsdashboard.firetms.salesinvoices.FireTmsIssuedSalesInvoicesResponse;
 import pl.lsobotka.firetmsdashboard.firetms.salesinvoices.FireTmsSalesInvoiceClient;
+import pl.lsobotka.firetmsdashboard.ui.layout.AppNavigationItem;
+import pl.lsobotka.firetmsdashboard.ui.layout.AppNavigationSection;
 
 @Route(value = MainView.ISSUED_ROUTE, layout = MainView.class)
 @PageTitle("FireTMS Sales Invoices")
+@AppNavigationItem(section = AppNavigationSection.INVOICES, label = "Issued", order = 10)
 public class FireTmsSalesInvoicesView extends VerticalLayout {
 
     static final int MAX_PREVIEW_LENGTH = 4_000;
@@ -49,13 +53,7 @@ public class FireTmsSalesInvoicesView extends VerticalLayout {
 
         Button fetchButton = new Button("Fetch issued sales invoices", event -> fetchInvoices(client));
 
-        add(
-                apiKeyField,
-                dateFromField,
-                dateToField,
-                fetchButton,
-                status,
-                preview);
+        add(apiKeyField, dateFromField, dateToField, fetchButton, status, preview);
     }
 
     private void fetchInvoices(FireTmsSalesInvoiceClient client) {
