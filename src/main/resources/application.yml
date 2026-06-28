@@ -4,3 +4,7 @@ spring:
 
 firetms:
   base-url: https://app.firetms.com/api
+
+ai:
+  openai:
+    model: gpt-5.4-mini

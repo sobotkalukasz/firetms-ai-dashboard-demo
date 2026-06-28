@@ -44,6 +44,25 @@ An experimental AI dashboard is available at `/ai-dashboard`. It lets you enter
 an OpenAI API key in the UI for the current session and uses a restricted
 read-only database view named `ai_sales_invoice_view`.
 
+When you click `Generate`, `/ai-dashboard` now makes a real OpenAI API call to
+classify the prompt into one of the supported dashboard intents:
+
+- `GROSS_SALES_BY_MONTH`
+- `TOP_CONTRACTORS_BY_GROSS_AMOUNT`
+- `INVOICE_COUNT_BY_STATUS`
+- `UNKNOWN`
+
+Only the following are sent to OpenAI:
+
+- the user prompt
+- the allowed intent list
+- the JSON output schema/instructions
+
+Invoice row data is not sent to OpenAI. The app does not send `raw_json`,
+`ai_sales_invoice_view` contents, or any FireTMS API key to OpenAI. OpenAI does
+not generate SQL in this flow. SQL and data aggregation remain local and
+controlled by the application after intent classification.
+
 The AI database surface is intentionally limited:
 
 - only `ai_sales_invoice_view` is exposed to AI SQL
@@ -59,11 +78,13 @@ Secret handling rules for this demo:
 - enter the OpenAI API key only in `/ai-dashboard`
 - neither key is persisted
 - neither key should be committed to Git
+- the OpenAI API key is not read from environment variables or application
+  configuration
 
 The Vaadin experimental AI feature flag is enabled in
 `src/main/resources/vaadin-featureflags.properties`.
 
-At the moment, `/ai-dashboard` validates the user-entered OpenAI API key and
-keeps the experiment in safe placeholder mode until a per-request Vaadin AI
-provider is wired from that UI-only key. No OpenAI API key is read from
-environment variables or application-local configuration.
+The OpenAI model used for classification is configured with the non-secret
+property `ai.openai.model` in `src/main/resources/application.yml`. The default
+is `gpt-5.5-mini`. If that model is unavailable for your API key, update the
+property to another supported Responses API model.
