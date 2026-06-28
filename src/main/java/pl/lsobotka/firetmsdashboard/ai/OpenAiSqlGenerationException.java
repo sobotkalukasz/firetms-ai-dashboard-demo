@@ -1,0 +1,12 @@
+package pl.lsobotka.firetmsdashboard.ai;
+
+public class OpenAiSqlGenerationException extends RuntimeException {
+
+    public OpenAiSqlGenerationException(String message) {
+        super(message);
+    }
+
+    public OpenAiSqlGenerationException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}
