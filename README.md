@@ -36,3 +36,8 @@ range, call `/invoices/sales/issued`, and inspect a short technical JSON preview
 The main dashboard is available at `/dashboard` and is also the default landing
 page. It currently includes basic sales invoice analytics from persisted
 `sales_invoice` records.
+
+An experimental placeholder for AI-generated dashboards is available at
+`/ai-dashboard`. The current spike is read-only and does not call an LLM yet; it
+exists to define the UI entry point and document the security constraints for a
+future Vaadin AI-generated Grid/Chart integration.
