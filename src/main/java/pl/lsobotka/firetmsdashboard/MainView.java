@@ -6,11 +6,9 @@ import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.PageTitle;
-import com.vaadin.flow.component.dependency.CssImport;
 import pl.lsobotka.firetmsdashboard.ui.layout.AppNavigation;
 import pl.lsobotka.firetmsdashboard.ui.layout.MainNavigationConfiguration;
 
-@CssImport("./styles/main-view.css")
 public class MainView extends AppLayout implements AfterNavigationObserver {
 
     public static final String DASHBOARD_ROUTE = "dashboard";

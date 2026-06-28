@@ -1,0 +1,235 @@
+:root {
+  --app-primary: #6750a4;
+  --app-primary-strong: #4f378b;
+  --app-secondary: #625b71;
+  --app-surface: rgba(255, 251, 254, 0.84);
+  --app-surface-strong: rgba(255, 251, 254, 0.96);
+  --app-surface-outline: rgba(121, 116, 126, 0.16);
+  --app-surface-shadow: 0 18px 42px rgba(46, 32, 74, 0.12);
+  --app-surface-shadow-soft: 0 8px 24px rgba(46, 32, 74, 0.08);
+  --app-background:
+    radial-gradient(circle at top left, rgba(208, 188, 255, 0.3), transparent 28%),
+    radial-gradient(circle at top right, rgba(204, 194, 220, 0.24), transparent 32%),
+    linear-gradient(180deg, #f8f4fb 0%, #f4f0f8 48%, #f7f2fa 100%);
+
+  --lumo-primary-color: var(--app-primary);
+  --lumo-primary-color-10pct: rgba(103, 80, 164, 0.12);
+  --lumo-primary-color-50pct: rgba(103, 80, 164, 0.5);
+  --lumo-primary-color-20pct: rgba(103, 80, 164, 0.2);
+  --lumo-primary-text-color: var(--app-primary-strong);
+  --lumo-base-color: #f7f2fa;
+  --lumo-body-text-color: #1d1b20;
+  --lumo-secondary-text-color: #49454f;
+  --lumo-tertiary-text-color: #625b71;
+  --lumo-header-text-color: #1d1b20;
+  --lumo-font-family: "Aptos", "IBM Plex Sans", "Segoe UI Variable Text", sans-serif;
+  --lumo-line-height-m: 1.6;
+  --lumo-border-radius-s: 14px;
+  --lumo-border-radius-m: 20px;
+  --lumo-border-radius-l: 28px;
+  --lumo-box-shadow-xs: 0 1px 2px rgba(29, 27, 32, 0.08);
+  --lumo-box-shadow-s: 0 8px 24px rgba(46, 32, 74, 0.08);
+  --lumo-box-shadow-m: var(--app-surface-shadow);
+  --lumo-space-xs: 0.375rem;
+  --lumo-space-s: 0.75rem;
+  --lumo-space-m: 1rem;
+  --lumo-space-l: 1.5rem;
+  --lumo-space-xl: 2rem;
+}
+
+html,
+body {
+  background: var(--app-background);
+}
+
+body {
+  color: var(--lumo-body-text-color);
+}
+
+.app-shell-title {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.drawer-nav {
+  padding: 1rem;
+  gap: 1rem;
+}
+
+.drawer-card,
+.surface-card {
+  border-radius: 28px;
+  background: var(--app-surface);
+  border: 1px solid var(--app-surface-outline);
+  box-shadow: var(--app-surface-shadow-soft);
+  backdrop-filter: blur(18px);
+}
+
+.drawer-brand-card,
+.surface-card {
+  padding: 1.25rem 1.5rem;
+}
+
+.drawer-brand-title {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.drawer-brand-description {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  color: var(--lumo-secondary-text-color);
+}
+
+.drawer-menu-card {
+  padding: 0.5rem;
+}
+
+.drawer-group {
+  width: 100%;
+  border-radius: 22px;
+}
+
+.drawer-group-summary {
+  margin: 0;
+  padding: 0.2rem 0.4rem 0.2rem 0.2rem;
+}
+
+.drawer-group-icon {
+  color: var(--lumo-secondary-text-color);
+}
+
+.drawer-group-label {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.drawer-group-items {
+  padding: 0 0.2rem 0.35rem;
+}
+
+.drawer-nav-button {
+  justify-content: flex-start;
+  padding: 0.75rem 0.85rem;
+  margin-left: 0.4rem;
+  border-radius: 999px;
+  font-weight: 500;
+}
+
+.drawer-nav-button.nav-button-active {
+  background: var(--lumo-primary-color-10pct);
+  color: var(--lumo-primary-text-color);
+  box-shadow: inset 0 0 0 1px var(--lumo-primary-color-20pct);
+}
+
+.surface-card-hero {
+  gap: 0.75rem;
+  background:
+    linear-gradient(135deg, rgba(255, 251, 254, 0.98), rgba(244, 237, 255, 0.92)),
+    var(--app-surface);
+}
+
+.surface-card-section {
+  gap: 1rem;
+}
+
+.page-hero-title {
+  margin: 0;
+  font-size: clamp(2rem, 3vw, 2.6rem);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.page-hero-description,
+.prompt-examples,
+.result-explanation {
+  margin: 0;
+  color: var(--lumo-secondary-text-color);
+}
+
+.prompt-examples {
+  white-space: pre-wrap;
+}
+
+.query-form-card,
+.result-summary-card {
+  gap: 1rem;
+}
+
+.result-title,
+.section-title {
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.ai-dashboard-view {
+  gap: var(--lumo-space-l);
+  padding-bottom: var(--lumo-space-xl);
+}
+
+.query-action-bar {
+  flex-wrap: wrap;
+}
+
+.ai-dashboard-status {
+  width: 100%;
+  border-radius: 24px;
+  padding: 1rem 1.1rem;
+  border: 1px solid transparent;
+  box-sizing: border-box;
+  background: rgba(103, 80, 164, 0.08);
+}
+
+.ai-dashboard-status[data-state="info"] {
+  border-color: rgba(103, 80, 164, 0.14);
+}
+
+.ai-dashboard-status[data-state="success"] {
+  background: rgba(74, 103, 65, 0.1);
+  border-color: rgba(74, 103, 65, 0.18);
+}
+
+.ai-dashboard-status[data-state="error"] {
+  background: rgba(186, 26, 26, 0.09);
+  border-color: rgba(186, 26, 26, 0.16);
+  color: #8c1d18;
+}
+
+.ai-dashboard-metadata {
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.ai-dashboard-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.1rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  background: rgba(103, 80, 164, 0.08);
+  color: var(--app-primary-strong);
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.ai-dashboard-message {
+  width: 100%;
+  border-radius: 20px;
+  background: rgba(255, 216, 143, 0.22);
+  border: 1px solid rgba(147, 108, 19, 0.14);
+  color: #6d4c0d;
+  padding: 0.9rem 1rem;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .surface-card,
+  .drawer-brand-card {
+    padding: 1rem;
+    border-radius: 24px;
+  }
+}

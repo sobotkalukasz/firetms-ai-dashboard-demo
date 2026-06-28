@@ -5,7 +5,6 @@ import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
@@ -47,7 +46,6 @@ import pl.lsobotka.firetmsdashboard.ui.layout.AppNavigationSection;
 @Route(value = MainView.AI_DASHBOARD_ROUTE, layout = MainView.class)
 @PageTitle("AI Dashboard Experiment")
 @AppNavigationItem(section = AppNavigationSection.EXPERIMENTS, label = "AI Dashboard", order = 10)
-@CssImport("./styles/ai-dashboard-view.css")
 public class AiDashboardExperimentView extends VerticalLayout {
 
     private static final String OPENAI_API_KEY_REQUIRED_MESSAGE = "OpenAI API key is required for this AI experiment.";
@@ -94,10 +92,12 @@ public class AiDashboardExperimentView extends VerticalLayout {
         addClassName("ai-dashboard-view");
 
         H2 heading = new H2("AI Dashboard Experiment");
+        heading.addClassName("page-hero-title");
         Paragraph description = new Paragraph(
                 "This page uses OpenAI to generate SQL and a visualization spec against a restricted invoice view. "
                         + "Only the prompt, safe schema, and SQL rules are sent to OpenAI. Invoice rows stay local, and "
                         + "history stores only sanitized metadata.");
+        description.addClassName("page-hero-description");
 
         configureOpenAiApiKeyField();
         configurePromptField();
@@ -118,24 +118,29 @@ public class AiDashboardExperimentView extends VerticalLayout {
         actionBar.setAlignItems(Alignment.CENTER);
         actionBar.setWidthFull();
         actionBar.expand(progressBar);
+        actionBar.addClassName("query-action-bar");
+
+        Details restrictedSchemaDetails = new Details("Restricted AI schema", new Text(sqlSafetyValidator.schemaDescription()));
+        restrictedSchemaDetails.setWidthFull();
+
+        VerticalLayout heroCard = createSurfaceCard("surface-card", "surface-card-hero");
+        heroCard.add(heading, description, createPromptExamples());
+
+        VerticalLayout queryCard = createSurfaceCard("surface-card", "query-form-card");
+        queryCard.add(openAiApiKeyField, promptField, actionBar, status);
+
+        VerticalLayout resultSummaryCard = createSurfaceCard("surface-card", "result-summary-card");
+        resultSummaryCard.add(resultTitle, resultExplanation, metadataBar, visualizationMessage);
 
         add(
-                heading,
-                description,
-                createPromptExamples(),
-                openAiApiKeyField,
-                promptField,
-                actionBar,
-                status,
-                resultTitle,
-                resultExplanation,
-                metadataBar,
-                visualizationMessage,
+                heroCard,
+                queryCard,
+                resultSummaryCard,
                 createSection("Visualization", chartContainer),
                 createSection("Result Grid", resultGrid),
-                generatedSqlDetails,
+                createSurfaceCard(generatedSqlDetails, "surface-card", "surface-card-section"),
                 createSection("Recent Query History", historyGrid),
-                new Details("Restricted AI schema", new Text(sqlSafetyValidator.schemaDescription())));
+                createSurfaceCard(restrictedSchemaDetails, "surface-card", "surface-card-section"));
 
         showInitialStatus();
         refreshHistory();
@@ -190,11 +195,14 @@ public class AiDashboardExperimentView extends VerticalLayout {
         generatedSqlArea.setMinHeight("12rem");
         generatedSqlDetails.setOpened(false);
         generatedSqlDetails.setVisible(false);
+        generatedSqlDetails.setWidthFull();
     }
 
     private void configureResultSummary() {
         resultTitle.setVisible(false);
         resultExplanation.setVisible(false);
+        resultTitle.addClassName("result-title");
+        resultExplanation.addClassName("result-explanation");
     }
 
     private void configureMetadataBar() {
@@ -226,20 +234,39 @@ public class AiDashboardExperimentView extends VerticalLayout {
 
     private VerticalLayout createSection(String title, com.vaadin.flow.component.Component content) {
         H3 heading = new H3(title);
+        heading.addClassName("section-title");
         VerticalLayout section = new VerticalLayout(heading, content);
+        section.addClassNames("surface-card", "surface-card-section");
         section.setPadding(false);
         section.setSpacing(true);
         section.setWidthFull();
         return section;
     }
 
+    private VerticalLayout createSurfaceCard(Component content, String... classNames) {
+        VerticalLayout card = createSurfaceCard(classNames);
+        card.add(content);
+        return card;
+    }
+
+    private VerticalLayout createSurfaceCard(String... classNames) {
+        VerticalLayout card = new VerticalLayout();
+        card.setWidthFull();
+        card.setPadding(false);
+        card.setSpacing(true);
+        card.addClassNames(classNames);
+        return card;
+    }
+
     private Paragraph createPromptExamples() {
-        return new Paragraph("""
+        Paragraph examples = new Paragraph("""
                 Prompt examples:
                 Show the 25 most recent invoices
                 Show total gross amount by contractor for paid invoices
                 Show invoice count by month for EUR invoices
                 """);
+        examples.addClassName("prompt-examples");
+        return examples;
     }
 
     private void showInitialStatus() {

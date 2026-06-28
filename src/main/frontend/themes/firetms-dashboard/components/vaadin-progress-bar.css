@@ -1,0 +1,9 @@
+[part="bar"] {
+  background: rgba(103, 80, 164, 0.12);
+  border-radius: 999px;
+}
+
+[part="value"] {
+  background: linear-gradient(90deg, #6750a4, #8b6ccf);
+  border-radius: 999px;
+}

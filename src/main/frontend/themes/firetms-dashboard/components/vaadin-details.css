@@ -1,0 +1,9 @@
+[part="summary"] {
+  padding: 0.15rem 0;
+  font-weight: 600;
+  color: #1d1b20;
+}
+
+[part="content"] {
+  padding-top: 0.85rem;
+}
