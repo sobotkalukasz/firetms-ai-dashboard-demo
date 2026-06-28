@@ -15,16 +15,18 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import pl.lsobotka.firetmsdashboard.MainView;
 import pl.lsobotka.firetmsdashboard.firetms.FireTmsClientException;
-import pl.lsobotka.firetmsdashboard.firetms.salesinvoices.FireTmsIssuedSalesInvoicesResponse;
-import pl.lsobotka.firetmsdashboard.firetms.salesinvoices.SalesInvoiceQueryService;
-import pl.lsobotka.firetmsdashboard.firetms.salesinvoices.SalesInvoiceRow;
-import pl.lsobotka.firetmsdashboard.firetms.salesinvoices.SalesInvoiceSyncResult;
-import pl.lsobotka.firetmsdashboard.firetms.salesinvoices.SalesInvoiceSyncService;
+import pl.lsobotka.firetmsdashboard.firetms.salesinvoices.application.SalesInvoiceQueryService;
+import pl.lsobotka.firetmsdashboard.firetms.salesinvoices.application.SalesInvoiceSyncResult;
+import pl.lsobotka.firetmsdashboard.firetms.salesinvoices.application.SalesInvoiceSyncService;
+import pl.lsobotka.firetmsdashboard.firetms.salesinvoices.integration.FireTmsIssuedSalesInvoicesResponse;
+import pl.lsobotka.firetmsdashboard.firetms.salesinvoices.query.SalesInvoiceRow;
 import pl.lsobotka.firetmsdashboard.ui.layout.AppNavigationItem;
 import pl.lsobotka.firetmsdashboard.ui.layout.AppNavigationSection;
 
@@ -60,8 +62,8 @@ public class FireTmsSalesInvoicesView extends VerticalLayout {
         apiKeyField.setWidthFull();
         apiKeyField.setRevealButtonVisible(false);
 
-        dateFromField.setValue(LocalDate.now().minusDays(7));
-        dateToField.setValue(LocalDate.now());
+        dateFromField.setValue(LocalDate.now(Clock.systemDefaultZone()).minusDays(7));
+        dateToField.setValue(LocalDate.now(Clock.systemDefaultZone()));
 
         filterField.setPlaceholder("Invoice number or contractor name");
         filterField.setClearButtonVisible(true);
@@ -108,7 +110,7 @@ public class FireTmsSalesInvoicesView extends VerticalLayout {
         invoicesGrid.addColumn(SalesInvoiceRow::grossAmount).setHeader("Gross amount").setAutoWidth(true);
         invoicesGrid.addColumn(SalesInvoiceRow::currency).setHeader("Currency").setAutoWidth(true);
         invoicesGrid.addColumn(SalesInvoiceRow::status).setHeader("Status").setAutoWidth(true);
-        invoicesGrid.addColumn(invoice -> formatUpdatedAt(invoice)).setHeader("Updated at").setAutoWidth(true).setSortable(true);
+        invoicesGrid.addColumn(this::formatUpdatedAt).setHeader("Updated at").setAutoWidth(true).setSortable(true);
         invoicesGrid.setEmptyStateText("No persisted sales invoices found.");
     }
 
@@ -132,10 +134,10 @@ public class FireTmsSalesInvoicesView extends VerticalLayout {
         try {
             SalesInvoiceSyncResult result = syncService.syncIssuedSalesInvoices(apiKey, dateFrom, dateTo);
             FireTmsIssuedSalesInvoicesResponse response = result.response();
-            showStatus(buildSuccessMessage(response, result.persistedInvoices()));
+            showStatus(result.successMessage());
             preview.setValue(limitPreview(response.rawJson()));
             refreshGrid();
-        } catch (FireTmsClientException exception) {
+        } catch (FireTmsClientException _) {
             showStatus(GENERIC_ERROR_MESSAGE);
             preview.clear();
         }
@@ -144,20 +146,6 @@ public class FireTmsSalesInvoicesView extends VerticalLayout {
     private void refreshGrid() {
         List<SalesInvoiceRow> rows = queryService.findSalesInvoices(filterField.getValue());
         invoicesGrid.setItems(rows);
-    }
-
-    private String buildSuccessMessage(FireTmsIssuedSalesInvoicesResponse response, int persistedInvoices) {
-        Integer totalItems = response.totalItems();
-        Integer returnedItems = response.returnedItems();
-
-        if (totalItems != null && returnedItems != null) {
-            return "Sync succeeded. Persisted " + persistedInvoices + " invoices. Returned "
-                    + returnedItems + " items, totalItems=" + totalItems + ".";
-        }
-        if (returnedItems != null) {
-            return "Sync succeeded. Persisted " + persistedInvoices + " invoices. Returned " + returnedItems + " items.";
-        }
-        return "Sync succeeded. Persisted " + persistedInvoices + " invoices.";
     }
 
     private void showStatus(String message) {

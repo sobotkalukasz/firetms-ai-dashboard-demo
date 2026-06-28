@@ -1,4 +1,4 @@
-package pl.lsobotka.firetmsdashboard.firetms.salesinvoices;
+package pl.lsobotka.firetmsdashboard.firetms.salesinvoices.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 

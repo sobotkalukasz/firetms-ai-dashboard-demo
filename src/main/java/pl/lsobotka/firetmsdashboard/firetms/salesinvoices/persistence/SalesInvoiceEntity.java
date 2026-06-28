@@ -1,4 +1,4 @@
-package pl.lsobotka.firetmsdashboard.firetms.salesinvoices;
+package pl.lsobotka.firetmsdashboard.firetms.salesinvoices.persistence;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "sales_invoice")
-public class SalesInvoice {
+public class SalesInvoiceEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

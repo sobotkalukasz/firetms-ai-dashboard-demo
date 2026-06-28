@@ -1,8 +1,9 @@
-package pl.lsobotka.firetmsdashboard.firetms.salesinvoices;
+package pl.lsobotka.firetmsdashboard.firetms.salesinvoices.query;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import pl.lsobotka.firetmsdashboard.firetms.salesinvoices.persistence.SalesInvoiceEntity;
 
 public record SalesInvoiceRow(
         Long id,
@@ -16,7 +17,7 @@ public record SalesInvoiceRow(
         String status,
         LocalDateTime updatedAt) {
 
-    static SalesInvoiceRow from(SalesInvoice invoice) {
+    public static SalesInvoiceRow from(SalesInvoiceEntity invoice) {
         return new SalesInvoiceRow(
                 invoice.getId(),
                 invoice.getInvoiceNumber(),

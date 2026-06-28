@@ -1,10 +1,9 @@
-package pl.lsobotka.firetmsdashboard.firetms.salesinvoices;
+package pl.lsobotka.firetmsdashboard.firetms.integration;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
-import java.time.LocalDate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.util.StringUtils;
@@ -14,27 +13,26 @@ import org.springframework.web.util.UriComponentsBuilder;
 import pl.lsobotka.firetmsdashboard.firetms.FireTmsClientException;
 import pl.lsobotka.firetmsdashboard.firetms.FireTmsProperties;
 
-public class FireTmsSalesInvoiceClient {
+public class FireTmsClient {
 
     private static final String API_KEY_HEADER = "apikey";
-    private static final String SALES_INVOICES_PATH = "/invoices/sales/issued";
 
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
     private final FireTmsProperties properties;
 
-    public FireTmsSalesInvoiceClient(RestClient restClient, ObjectMapper objectMapper, FireTmsProperties properties) {
+    public FireTmsClient(RestClient restClient, ObjectMapper objectMapper, FireTmsProperties properties) {
         this.restClient = restClient;
         this.objectMapper = objectMapper;
         this.properties = properties;
     }
 
-    public FireTmsIssuedSalesInvoicesResponse fetchIssuedSalesInvoices(String apiKey, LocalDate dateFrom, LocalDate dateTo) {
+    public FireTmsResponse get(String apiKey, FireTmsRequest request) {
         if (!StringUtils.hasText(apiKey)) {
             throw new IllegalArgumentException("API key must not be blank");
         }
 
-        URI uri = buildIssuedSalesInvoicesUri(dateFrom, dateTo);
+        URI uri = buildUri(request);
 
         try {
             String rawJson = restClient.get()
@@ -49,11 +47,7 @@ public class FireTmsSalesInvoiceClient {
             }
 
             JsonNode payload = objectMapper.readTree(rawJson);
-            return new FireTmsIssuedSalesInvoicesResponse(
-                    rawJson,
-                    readOptionalInt(payload, "totalItems"),
-                    payload.path("items").isArray() ? payload.path("items").size() : null,
-                    payload);
+            return new FireTmsResponse(rawJson, payload);
         } catch (JsonProcessingException exception) {
             throw new FireTmsClientException("FireTMS returned a response that could not be parsed", exception);
         } catch (RestClientException exception) {
@@ -61,21 +55,11 @@ public class FireTmsSalesInvoiceClient {
         }
     }
 
-    URI buildIssuedSalesInvoicesUri(LocalDate dateFrom, LocalDate dateTo) {
-        // TODO: FireTMS OpenAPI describes these as date-time fields, but the live endpoint
-        // currently accepts plain ISO dates such as 2026-05-20 for this resource.
-        return UriComponentsBuilder.fromUriString(properties.baseUrl())
-                .path(SALES_INVOICES_PATH)
-                .queryParam("dateOfIssueFrom", dateFrom)
-                .queryParam("dateOfIssueTo", dateTo)
-                .build(true)
-                .toUri();
-    }
+    URI buildUri(FireTmsRequest request) {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(properties.baseUrl())
+                .path(request.path());
 
-    private Integer readOptionalInt(JsonNode node, String fieldName) {
-        if (!node.has(fieldName) || !node.get(fieldName).canConvertToInt()) {
-            return null;
-        }
-        return node.get(fieldName).intValue();
+        request.queryParams().forEach(builder::queryParam);
+        return builder.build(true).toUri();
     }
 }

@@ -1,4 +1,4 @@
-package pl.lsobotka.firetmsdashboard.firetms.salesinvoices;
+package pl.lsobotka.firetmsdashboard.firetms.salesinvoices.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
@@ -11,6 +11,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import pl.lsobotka.firetmsdashboard.firetms.salesinvoices.persistence.SalesInvoiceEntity;
+import pl.lsobotka.firetmsdashboard.firetms.salesinvoices.persistence.SalesInvoiceRepository;
+import pl.lsobotka.firetmsdashboard.firetms.salesinvoices.query.SalesInvoiceRow;
 
 @ExtendWith(MockitoExtension.class)
 class SalesInvoiceQueryServiceTest {
@@ -20,7 +23,7 @@ class SalesInvoiceQueryServiceTest {
 
     @Test
     void loadsFilteredInvoicesFromRepository() {
-        SalesInvoice invoice = invoice("INV-2026/01", "Acme Logistics");
+        SalesInvoiceEntity invoice = invoice("INV-2026/01", "Acme Logistics");
         when(repository.findByInvoiceNumberContainingIgnoreCaseOrContractorNameContainingIgnoreCaseOrderByIssueDateDescUpdatedAtDesc(
                 "Acme", "Acme")).thenReturn(List.of(invoice));
 
@@ -35,7 +38,7 @@ class SalesInvoiceQueryServiceTest {
 
     @Test
     void loadsAllInvoicesWhenFilterIsBlank() {
-        SalesInvoice invoice = invoice("INV-2026/02", "Beta Transport");
+        SalesInvoiceEntity invoice = invoice("INV-2026/02", "Beta Transport");
         when(repository.findAllByOrderByIssueDateDescUpdatedAtDesc()).thenReturn(List.of(invoice));
 
         SalesInvoiceQueryService service = new SalesInvoiceQueryService(repository);
@@ -46,8 +49,8 @@ class SalesInvoiceQueryServiceTest {
         verify(repository).findAllByOrderByIssueDateDescUpdatedAtDesc();
     }
 
-    private SalesInvoice invoice(String number, String contractorName) {
-        SalesInvoice invoice = new SalesInvoice();
+    private SalesInvoiceEntity invoice(String number, String contractorName) {
+        SalesInvoiceEntity invoice = new SalesInvoiceEntity();
         invoice.setInvoiceNumber(number);
         invoice.setContractorName(contractorName);
         invoice.setIssueDate(LocalDate.of(2026, 6, 20));
