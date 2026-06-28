@@ -3,6 +3,7 @@ package pl.lsobotka.firetmsdashboard.ui.layout;
 import com.vaadin.flow.component.icon.VaadinIcon;
 
 public enum AppNavigationSection {
+    DASHBOARD("Dashboard", VaadinIcon.DASHBOARD, 10),
     INVOICES("Invoices", VaadinIcon.RECORDS, 100);
 
     private final String label;

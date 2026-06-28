@@ -13,6 +13,7 @@ import pl.lsobotka.firetmsdashboard.ui.layout.MainNavigationConfiguration;
 @CssImport("./styles/main-view.css")
 public class MainView extends AppLayout implements AfterNavigationObserver {
 
+    public static final String DASHBOARD_ROUTE = "dashboard";
     public static final String ISSUED_ROUTE = "firetms/sales-invoices";
 
     private final H1 viewTitle = new H1();
@@ -30,7 +31,8 @@ public class MainView extends AppLayout implements AfterNavigationObserver {
     @Override
     public void afterNavigation(AfterNavigationEvent event) {
         viewTitle.setText(resolveCurrentPageTitle());
-        navigation.setActivePath(event.getLocation().getPath());
+        String currentPath = event.getLocation().getPath();
+        navigation.setActivePath(currentPath.isBlank() ? DASHBOARD_ROUTE : currentPath);
     }
 
     private String resolveCurrentPageTitle() {
