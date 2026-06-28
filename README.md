@@ -44,6 +44,14 @@ An experimental AI dashboard is available at `/ai-dashboard`. It lets you enter
 an OpenAI API key in the UI for the current session and uses a restricted
 read-only database view named `ai_sales_invoice_view`.
 
+The current `/ai-dashboard` behavior is intentionally conservative:
+
+- prompt handling is classified locally for a small set of supported analytics intents
+- supported prompts render deterministic fallback analytics from `SalesInvoiceAnalyticsService`
+- the UI clearly reports when the local safe fallback was used
+- if a prompt is unsupported, the UI shows example prompts instead of attempting ad hoc AI execution
+- the OpenAI API key is still collected from the UI only, but live OpenAI calls stay disabled until safe per-request wiring is implemented
+
 The AI database surface is intentionally limited:
 
 - only `ai_sales_invoice_view` is exposed to AI SQL
