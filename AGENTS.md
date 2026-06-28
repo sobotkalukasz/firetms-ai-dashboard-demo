@@ -25,6 +25,7 @@ The FireTMS API key is provided by the user through the UI, not through local en
 ## Development rules
 
 - Prefer small, focused changes.
+- Always follow software architectural guidelines.
 - Do not add PostgreSQL yet.
 - Do not add Spring Security yet.
 - Do not add multi-tenancy yet.

@@ -46,9 +46,11 @@ public class SqlSafetyValidator {
             - generate exactly one SELECT statement
             - query ai_sales_invoice_view only
             - use only the listed columns
+            - never query sales_invoice
+            - never query raw_json
             - do not use write or DDL statements
             - do not use SQL comments
-            - include LIMIT when practical
+            - always include LIMIT
             - keep titles short and explanations concise
             """;
 
