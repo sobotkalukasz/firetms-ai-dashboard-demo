@@ -1,12 +1,10 @@
 package pl.lsobotka.firetmsdashboard.ui;
 
 import com.vaadin.flow.component.Text;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.ai.chart.ChartAIController;
 import com.vaadin.flow.component.ai.grid.AIDataRow;
 import com.vaadin.flow.component.ai.grid.GridAIController;
 import com.vaadin.flow.component.ai.orchestrator.AIOrchestrator;
-import com.vaadin.flow.component.ai.provider.LLMProvider;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.charts.Chart;
 import com.vaadin.flow.component.charts.model.ChartType;
@@ -20,16 +18,11 @@ import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.util.List;
-import java.util.Optional;
-import org.springframework.context.ApplicationContext;
 import pl.lsobotka.firetmsdashboard.MainView;
-import pl.lsobotka.firetmsdashboard.ai.DelegatingAiController;
 import pl.lsobotka.firetmsdashboard.ai.RestrictedAiSalesInvoiceDatabaseProvider;
 import pl.lsobotka.firetmsdashboard.ui.layout.AppNavigationItem;
 import pl.lsobotka.firetmsdashboard.ui.layout.AppNavigationSection;
@@ -39,33 +32,33 @@ import pl.lsobotka.firetmsdashboard.ui.layout.AppNavigationSection;
 @AppNavigationItem(section = AppNavigationSection.EXPERIMENTS, label = "AI Dashboard", order = 10)
 public class AiDashboardExperimentView extends VerticalLayout {
 
-    private static final String SYSTEM_PROMPT = """
-            You are configuring read-only analytics components for FireTMS issued sales invoices.
-            Use only SQL SELECT queries against ai_sales_invoice_view.
-            Never ask for or reference API keys, secrets, or raw JSON payloads.
-            Keep queries reasonably scoped and use LIMIT when practical.
-            """;
-    private static final String PROVIDER_MISSING_MESSAGE = """
+    private static final String OPENAI_API_KEY_REQUIRED_MESSAGE = "OpenAI API key is required for this AI experiment.";
+    private static final String PROVIDER_PLACEHOLDER_MESSAGE = """
             Safe placeholder mode.
 
             The restricted DatabaseProvider, GridAIController, and ChartAIController are wired,
-            but no supported LLM provider is configured for this application yet.
+            but this experiment does not yet create a Vaadin AI LLM provider from the
+            user-entered OpenAI API key on each request.
 
-            To enable live AI generation later, add either:
-            - a Spring AI ChatModel bean, or
-            - a LangChain4j ChatModel bean
+            TODO:
+            Wire a per-request OpenAI-backed provider so the UI key stays in session memory only.
 
-            The FireTMS API key is never shared with AI.
+            The FireTMS API key is never shared with AI, and raw_json remains unavailable.
+            """;
+    private static final String GENERIC_AI_ERROR_MESSAGE = """
+            AI request could not be completed.
+
+            Check the OpenAI API key and try again later.
             """;
 
+    private final PasswordField openAiApiKeyField = new PasswordField("OpenAI API key");
     private final TextArea promptField = new TextArea("Prompt");
     private final Div status = new Div();
     private final Grid<AIDataRow> aiGrid = new Grid<>(AIDataRow.class, false);
     private final Chart aiChart = new Chart();
-    private final AIOrchestrator orchestrator;
+    private final AIOrchestrator orchestrator = null;
 
-    public AiDashboardExperimentView(RestrictedAiSalesInvoiceDatabaseProvider databaseProvider,
-            ApplicationContext applicationContext) {
+    public AiDashboardExperimentView(RestrictedAiSalesInvoiceDatabaseProvider databaseProvider) {
         setPadding(true);
         setSpacing(true);
         setMaxWidth("1200px");
@@ -74,21 +67,21 @@ public class AiDashboardExperimentView extends VerticalLayout {
         Paragraph description = new Paragraph(
                 "This page experiments with Vaadin AI-generated grids and charts over a restricted analytics view.");
 
+        configureOpenAiApiKeyField();
         configurePromptField();
         configureGrid();
         configureChart();
 
-        GridAIController gridController = new GridAIController(aiGrid, databaseProvider);
-        ChartAIController chartController = new ChartAIController(aiChart, databaseProvider);
-        orchestrator = createOrchestrator(applicationContext, new DelegatingAiController(List.of(gridController, chartController)));
+        new GridAIController(aiGrid, databaseProvider);
+        new ChartAIController(aiChart, databaseProvider);
 
         Button generateButton = new Button("Generate", event -> generateDashboard());
-        generateButton.setEnabled(orchestrator != null);
 
         add(
                 heading,
                 description,
                 createPromptExamples(),
+                openAiApiKeyField,
                 promptField,
                 generateButton,
                 status,
@@ -97,6 +90,12 @@ public class AiDashboardExperimentView extends VerticalLayout {
                 new Details("Restricted AI schema", new Text(databaseProvider.getSchema())));
 
         showInitialStatus();
+    }
+
+    private void configureOpenAiApiKeyField() {
+        openAiApiKeyField.setWidthFull();
+        openAiApiKeyField.setRevealButtonVisible(false);
+        openAiApiKeyField.setHelperText("Used only for AI dashboard requests in the current UI session. It is not persisted.");
     }
 
     private void configurePromptField() {
@@ -124,7 +123,7 @@ public class AiDashboardExperimentView extends VerticalLayout {
         Configuration configuration = aiChart.getConfiguration();
         configuration.getChart().setType(ChartType.COLUMN);
         configuration.setTitle(new Title("AI-generated chart preview"));
-        configuration.setSubTitle("Awaiting a configured LLM provider and a prompt.");
+        configuration.setSubTitle("Awaiting a prompt and per-request OpenAI provider wiring.");
     }
 
     private VerticalLayout createSection(String title, com.vaadin.flow.component.Component content) {
@@ -138,33 +137,35 @@ public class AiDashboardExperimentView extends VerticalLayout {
     private Paragraph createPromptExamples() {
         return new Paragraph("""
                 Prompt examples:
-                Show gross sales by month.
-                Show the latest imported invoices.
-                Compare gross amount by contractor for the top 10 rows.
+                Show gross sales by month
+                Show top 10 contractors by gross amount
+                Show invoice count by status
                 """);
     }
 
     private void showInitialStatus() {
-        if (orchestrator == null) {
-            showStatus(PROVIDER_MISSING_MESSAGE);
-            return;
-        }
         showStatus("""
-                AI provider detected.
+                Enter an OpenAI API key and a prompt to run this experiment.
 
-                Prompts can update the grid and chart with read-only SQL against ai_sales_invoice_view.
+                The AI surface is read-only and restricted to ai_sales_invoice_view.
                 """);
     }
 
     private void generateDashboard() {
+        String apiKey = openAiApiKeyField.getValue() == null ? "" : openAiApiKeyField.getValue().trim();
         String prompt = promptField.getValue() == null ? "" : promptField.getValue().trim();
+        if (apiKey.isEmpty()) {
+            showStatus(OPENAI_API_KEY_REQUIRED_MESSAGE);
+            return;
+        }
+
         if (prompt.isEmpty()) {
             showStatus("Enter a prompt to prepare the AI dashboard experiment.");
             return;
         }
 
         if (orchestrator == null) {
-            showStatus(PROVIDER_MISSING_MESSAGE);
+            showStatus(PROVIDER_PLACEHOLDER_MESSAGE);
             return;
         }
 
@@ -172,79 +173,7 @@ public class AiDashboardExperimentView extends VerticalLayout {
             showStatus("AI request submitted. The grid and chart will update if the generated SQL passes validation.");
             orchestrator.prompt(prompt);
         } catch (RuntimeException exception) {
-            showStatus("AI request could not be started. Check the LLM provider configuration.");
-        }
-    }
-
-    private AIOrchestrator createOrchestrator(ApplicationContext applicationContext,
-            DelegatingAiController controller) {
-        Optional<LLMProvider> llmProvider = resolveProvider(applicationContext);
-        if (llmProvider.isEmpty()) {
-            return null;
-        }
-
-        UI ui = UI.getCurrent();
-        return AIOrchestrator.builder(llmProvider.get(), SYSTEM_PROMPT)
-                .withController(controller)
-                .withResponseListener(event -> ui.access(() -> {
-                    if (event.getError().isPresent()) {
-                        showStatus("AI request failed. The provider or generated SQL did not complete successfully.");
-                    } else if (event.getResponse().isBlank()) {
-                        showStatus("AI request completed. The grid and chart may have been updated without text output.");
-                    } else {
-                        showStatus("AI request completed. The grid and chart were updated from the restricted analytics view.");
-                    }
-                }))
-                .build();
-    }
-
-    private Optional<LLMProvider> resolveProvider(ApplicationContext applicationContext) {
-        Optional<LLMProvider> springAiProvider = instantiateProvider(applicationContext,
-                "org.springframework.ai.chat.model.ChatModel",
-                "com.vaadin.flow.component.ai.provider.SpringAILLMProvider");
-        if (springAiProvider.isPresent()) {
-            disableSpringAiStreaming(springAiProvider.get());
-            return springAiProvider;
-        }
-
-        Optional<LLMProvider> langChainProvider = instantiateProvider(applicationContext,
-                "dev.langchain4j.model.chat.ChatModel",
-                "com.vaadin.flow.component.ai.provider.LangChain4JLLMProvider");
-        if (langChainProvider.isPresent()) {
-            return langChainProvider;
-        }
-
-        return instantiateProvider(applicationContext,
-                "dev.langchain4j.model.chat.StreamingChatModel",
-                "com.vaadin.flow.component.ai.provider.LangChain4JLLMProvider");
-    }
-
-    private Optional<LLMProvider> instantiateProvider(ApplicationContext applicationContext,
-            String modelClassName, String providerClassName) {
-        try {
-            Class<?> modelClass = Class.forName(modelClassName);
-            String[] beanNames = applicationContext.getBeanNamesForType(modelClass);
-            if (beanNames.length == 0) {
-                return Optional.empty();
-            }
-
-            Object modelBean = applicationContext.getBean(beanNames[0], modelClass);
-            Class<?> providerClass = Class.forName(providerClassName);
-            Constructor<?> constructor = providerClass.getConstructor(modelClass);
-            return Optional.of((LLMProvider) constructor.newInstance(modelBean));
-        } catch (ClassNotFoundException exception) {
-            return Optional.empty();
-        } catch (ReflectiveOperationException exception) {
-            throw new IllegalStateException("Failed to initialize the Vaadin AI provider.", exception);
-        }
-    }
-
-    private void disableSpringAiStreaming(LLMProvider provider) {
-        try {
-            Method setStreaming = provider.getClass().getMethod("setStreaming", boolean.class);
-            setStreaming.invoke(provider, false);
-        } catch (ReflectiveOperationException ignored) {
-            // The provider may not expose streaming controls.
+            showStatus(GENERIC_AI_ERROR_MESSAGE);
         }
     }
 
