@@ -1,6 +1,7 @@
 package pl.lsobotka.firetmsdashboard.ui;
 
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.H2;
@@ -32,12 +33,17 @@ public class DashboardView extends VerticalLayout {
     private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM");
 
     private final SalesInvoiceAnalyticsService analyticsService;
+    private final DashboardChartsFactory chartsFactory;
     private final Grid<MonthlyGrossSales> monthlyGrid = new Grid<>(MonthlyGrossSales.class, false);
     private final Grid<ContractorGrossSales> contractorGrid = new Grid<>(ContractorGrossSales.class, false);
     private final Grid<StatusInvoiceCount> statusGrid = new Grid<>(StatusInvoiceCount.class, false);
+    private final Div monthlyChartContainer = new Div();
+    private final Div contractorChartContainer = new Div();
+    private final Div statusChartContainer = new Div();
 
-    public DashboardView(SalesInvoiceAnalyticsService analyticsService) {
+    public DashboardView(SalesInvoiceAnalyticsService analyticsService, DashboardChartsFactory chartsFactory) {
         this.analyticsService = analyticsService;
+        this.chartsFactory = chartsFactory;
 
         setSizeFull();
         setPadding(true);
@@ -52,19 +58,22 @@ public class DashboardView extends VerticalLayout {
         configureMonthlyGrid();
         configureContractorGrid();
         configureStatusGrid();
+        configureChartContainer(monthlyChartContainer);
+        configureChartContainer(contractorChartContainer);
+        configureChartContainer(statusChartContainer);
 
         add(
                 header,
-                createSection("Sales invoices: Gross amount by month", monthlyGrid),
-                createSection("Sales invoices: Gross amount by contractor", contractorGrid),
-                createSection("Sales invoices: Invoice count by status", statusGrid));
+                createSection("Sales invoices: Gross amount by month", monthlyChartContainer, monthlyGrid),
+                createSection("Sales invoices: Gross amount by contractor", contractorChartContainer, contractorGrid),
+                createSection("Sales invoices: Invoice count by status", statusChartContainer, statusGrid));
 
         refreshAnalytics();
     }
 
-    private VerticalLayout createSection(String title, Grid<?> grid) {
+    private VerticalLayout createSection(String title, Div chartContainer, Grid<?> grid) {
         H3 sectionHeading = new H3(title);
-        VerticalLayout section = new VerticalLayout(sectionHeading, grid);
+        VerticalLayout section = new VerticalLayout(sectionHeading, chartContainer, grid);
         section.setPadding(false);
         section.setSpacing(true);
         return section;
@@ -95,11 +104,21 @@ public class DashboardView extends VerticalLayout {
         grid.setEmptyStateText(emptyStateText);
     }
 
+    private void configureChartContainer(Div chartContainer) {
+        chartContainer.setWidthFull();
+    }
+
     private void refreshAnalytics() {
         SalesInvoiceAnalyticsSnapshot analytics = analyticsService.loadAnalytics();
         monthlyGrid.setItems(analytics.monthlyGrossSales());
         contractorGrid.setItems(analytics.contractorGrossSales());
         statusGrid.setItems(analytics.statusInvoiceCounts());
+        monthlyChartContainer.removeAll();
+        monthlyChartContainer.add(chartsFactory.createGrossAmountByMonthChart(analytics.monthlyGrossSales()));
+        contractorChartContainer.removeAll();
+        contractorChartContainer.add(chartsFactory.createGrossAmountByContractorChart(analytics.contractorGrossSales()));
+        statusChartContainer.removeAll();
+        statusChartContainer.add(chartsFactory.createInvoiceCountByStatusChart(analytics.statusInvoiceCounts()));
     }
 
     private String formatMonth(MonthlyGrossSales result) {
