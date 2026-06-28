@@ -45,32 +45,29 @@ an OpenAI API key in the UI for the current session and uses a restricted
 read-only database view named `ai_sales_invoice_view`.
 
 When you click `Generate`, `/ai-dashboard` now makes a real OpenAI API call to
-classify the prompt into one of the supported dashboard intents:
-
-- `GROSS_SALES_BY_MONTH`
-- `TOP_CONTRACTORS_BY_GROSS_AMOUNT`
-- `INVOICE_COUNT_BY_STATUS`
-- `UNKNOWN`
+generate SQL for the restricted AI view.
 
 Only the following are sent to OpenAI:
 
 - the user prompt
-- the allowed intent list
-- the JSON output schema/instructions
+- the exact safe schema for `ai_sales_invoice_view`
+- SQL generation rules
+- the expected JSON output schema/instructions
 
 Invoice row data is not sent to OpenAI. The app does not send `raw_json`,
-`ai_sales_invoice_view` contents, or any FireTMS API key to OpenAI. OpenAI does
-not generate SQL in this flow. SQL and data aggregation remain local and
-controlled by the application after intent classification.
+`ai_sales_invoice_view` contents, or any FireTMS API key to OpenAI. Generated
+SQL is parsed from the expected JSON object, validated locally, and only then
+executed against the database.
 
 The AI database surface is intentionally limited:
 
 - only `ai_sales_invoice_view` is exposed to AI SQL
 - `raw_json` is excluded from the view
+- invoice rows are not sent to OpenAI
+- generated SQL is validated before execution
 - the FireTMS API key is never exposed to AI
 - the OpenAI API key is used only for AI requests and is never exposed to FireTMS
-- the custom `DatabaseProvider` rejects non-`SELECT` SQL and direct access to
-  underlying tables
+- only validated `SELECT` queries against `ai_sales_invoice_view` are executed
 
 Secret handling rules for this demo:
 
