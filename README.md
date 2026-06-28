@@ -72,15 +72,21 @@ The AI database surface is intentionally limited:
 - the OpenAI API key is used only for AI requests and is never exposed to FireTMS
 - only validated `SELECT` queries against `ai_sales_invoice_view` are executed
 
-The AI dashboard also keeps a recent query history for UX and reruns. That
-history stores only sanitized metadata such as prompt, generated SQL, status,
-durations, explanation, and row count. It does not store OpenAI or FireTMS API
-keys, result rows, or `raw_json`.
+The custom AI dashboard at `/ai-dashboard` also keeps a recent query history
+for UX and reruns. That history stores only sanitized metadata such as prompt,
+generated SQL, status, durations, explanation, and row count. It does not
+store OpenAI or FireTMS API keys, result rows, or `raw_json`.
+
+A second experiment is available at `/ai-dashboard-vaadin`. That page uses
+Vaadin 25.2 AI components directly through `GridAIController` and
+`ChartAIController`, backed by the same restricted `ai_sales_invoice_view`.
+It is intentionally separate from the custom SQL-and-visualization workflow so
+both approaches can be compared side by side.
 
 Secret handling rules for this demo:
 
 - enter the FireTMS API key only in `/firetms/sales-invoices`
-- enter the OpenAI API key only in `/ai-dashboard`
+- enter the OpenAI API key only in `/ai-dashboard` or `/ai-dashboard-vaadin`
 - neither key is persisted
 - neither key should be committed to Git
 - the OpenAI API key is not read from environment variables or application
