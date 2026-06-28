@@ -1,4 +1,4 @@
-package pl.lsobotka.firetmsdashboard.ai;
+package pl.lsobotka.firetmsdashboard.ai.integration.vaadin;
 
 import com.vaadin.flow.component.ai.orchestrator.AIController;
 import com.vaadin.flow.component.ai.provider.LLMProvider;

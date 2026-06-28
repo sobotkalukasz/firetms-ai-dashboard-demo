@@ -1,4 +1,6 @@
-package pl.lsobotka.firetmsdashboard.ai;
+package pl.lsobotka.firetmsdashboard.ai.application;
+
+import pl.lsobotka.firetmsdashboard.ai.model.AiVisualizationSpec;
 
 public record AiQueryGenerationResult(
         String sql,

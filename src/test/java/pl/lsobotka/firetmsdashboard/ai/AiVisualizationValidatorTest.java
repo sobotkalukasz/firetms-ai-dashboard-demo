@@ -8,7 +8,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import pl.lsobotka.firetmsdashboard.ai.AiVisualizationSpec.VisualizationType;
+import pl.lsobotka.firetmsdashboard.ai.application.AiVisualizationValidationException;
+import pl.lsobotka.firetmsdashboard.ai.application.AiVisualizationValidator;
+import pl.lsobotka.firetmsdashboard.ai.model.AiVisualizationSpec;
+import pl.lsobotka.firetmsdashboard.ai.model.AiVisualizationSpec.VisualizationType;
+import pl.lsobotka.firetmsdashboard.ai.query.DynamicSqlQueryResult;
 
 class AiVisualizationValidatorTest {
 

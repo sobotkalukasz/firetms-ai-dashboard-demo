@@ -1,4 +1,4 @@
-package pl.lsobotka.firetmsdashboard.ai;
+package pl.lsobotka.firetmsdashboard.ai.query;
 
 public class SqlValidationException extends RuntimeException {
 

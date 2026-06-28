@@ -17,6 +17,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import pl.lsobotka.firetmsdashboard.ai.application.AiQueryHistoryEntry;
+import pl.lsobotka.firetmsdashboard.ai.application.AiQueryHistoryService;
+import pl.lsobotka.firetmsdashboard.ai.application.AiQueryHistoryStatus;
+import pl.lsobotka.firetmsdashboard.ai.application.AiQueryHistoryWriteRequest;
+import pl.lsobotka.firetmsdashboard.ai.model.AiVisualizationSpec;
+import pl.lsobotka.firetmsdashboard.ai.persistence.AiQueryHistoryEntity;
+import pl.lsobotka.firetmsdashboard.ai.persistence.AiQueryHistoryRepository;
 
 @ExtendWith(MockitoExtension.class)
 class AiQueryHistoryServiceTest {

@@ -1,4 +1,4 @@
-package pl.lsobotka.firetmsdashboard.ai;
+package pl.lsobotka.firetmsdashboard.ai.application;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,6 +12,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import pl.lsobotka.firetmsdashboard.ai.model.AiVisualizationSpec;
+import pl.lsobotka.firetmsdashboard.ai.persistence.AiQueryHistoryEntity;
+import pl.lsobotka.firetmsdashboard.ai.persistence.AiQueryHistoryRepository;
 
 @Service
 public class AiQueryHistoryService {

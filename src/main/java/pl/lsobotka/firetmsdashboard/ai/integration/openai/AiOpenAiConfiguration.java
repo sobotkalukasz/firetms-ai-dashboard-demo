@@ -1,4 +1,4 @@
-package pl.lsobotka.firetmsdashboard.ai;
+package pl.lsobotka.firetmsdashboard.ai.integration.openai;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

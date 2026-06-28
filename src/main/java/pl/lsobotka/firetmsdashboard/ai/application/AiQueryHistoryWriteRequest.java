@@ -1,18 +1,16 @@
-package pl.lsobotka.firetmsdashboard.ai;
+package pl.lsobotka.firetmsdashboard.ai.application;
 
-import java.time.LocalDateTime;
+import pl.lsobotka.firetmsdashboard.ai.model.AiVisualizationSpec;
 
-public record AiQueryHistoryEntry(
-        Long id,
+public record AiQueryHistoryWriteRequest(
         String prompt,
         String generatedSql,
-        String visualization,
+        AiVisualizationSpec visualizationSpec,
         String title,
         String explanation,
         Integer rowCount,
         AiQueryHistoryStatus status,
         String sanitizedErrorMessage,
         Long openAiDurationMs,
-        Long sqlDurationMs,
-        LocalDateTime createdAt) {
+        Long sqlDurationMs) {
 }

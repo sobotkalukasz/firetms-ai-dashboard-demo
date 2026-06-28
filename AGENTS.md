@@ -26,6 +26,7 @@ The FireTMS API key is provided by the user through the UI, not through local en
 
 - Prefer small, focused changes.
 - Always follow software architectural guidelines.
+- Keep module packages layered by responsibility. For the AI area, prefer separate `application`, `integration`, `persistence`, `query`, and shared `model` packages instead of a flat package.
 - Do not add PostgreSQL yet.
 - Do not add Spring Security yet.
 - Do not add multi-tenancy yet.
@@ -52,3 +53,4 @@ Before considering a task complete, run:
 
 ```bash
 mvn clean test
+```

@@ -1,4 +1,6 @@
-package pl.lsobotka.firetmsdashboard.ai;
+package pl.lsobotka.firetmsdashboard.ai.application;
+
+import pl.lsobotka.firetmsdashboard.ai.query.DynamicSqlQueryResult;
 
 public record AiDashboardExecutionResult(
         AiQueryGenerationResult generation,

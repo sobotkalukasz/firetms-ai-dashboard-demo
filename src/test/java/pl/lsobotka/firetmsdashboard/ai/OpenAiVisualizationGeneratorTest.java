@@ -16,7 +16,12 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.client.RestClient;
-import pl.lsobotka.firetmsdashboard.ai.AiVisualizationSpec.VisualizationType;
+import pl.lsobotka.firetmsdashboard.ai.application.AiQueryGenerationResult;
+import pl.lsobotka.firetmsdashboard.ai.integration.openai.AiOpenAiProperties;
+import pl.lsobotka.firetmsdashboard.ai.integration.openai.OpenAiSqlGenerationException;
+import pl.lsobotka.firetmsdashboard.ai.integration.openai.OpenAiVisualizationGenerator;
+import pl.lsobotka.firetmsdashboard.ai.model.AiVisualizationSpec.VisualizationType;
+import pl.lsobotka.firetmsdashboard.ai.query.SqlSafetyValidator;
 
 class OpenAiVisualizationGeneratorTest {
 

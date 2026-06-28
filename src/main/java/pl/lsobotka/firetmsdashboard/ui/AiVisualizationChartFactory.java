@@ -19,8 +19,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import pl.lsobotka.firetmsdashboard.ai.AiVisualizationSpec;
-import pl.lsobotka.firetmsdashboard.ai.DynamicSqlQueryResult;
+import pl.lsobotka.firetmsdashboard.ai.model.AiVisualizationSpec;
+import pl.lsobotka.firetmsdashboard.ai.query.DynamicSqlQueryResult;
 
 @org.springframework.stereotype.Component
 public class AiVisualizationChartFactory {

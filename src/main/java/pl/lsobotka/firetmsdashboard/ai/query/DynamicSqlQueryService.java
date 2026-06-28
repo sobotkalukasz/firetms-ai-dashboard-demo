@@ -1,4 +1,4 @@
-package pl.lsobotka.firetmsdashboard.ai;
+package pl.lsobotka.firetmsdashboard.ai.query;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

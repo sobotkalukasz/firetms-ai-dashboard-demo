@@ -1,4 +1,4 @@
-package pl.lsobotka.firetmsdashboard.ai;
+package pl.lsobotka.firetmsdashboard.ai.application;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -8,7 +8,9 @@ import java.util.Locale;
 import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import pl.lsobotka.firetmsdashboard.ai.AiVisualizationSpec.VisualizationType;
+import pl.lsobotka.firetmsdashboard.ai.model.AiVisualizationSpec;
+import pl.lsobotka.firetmsdashboard.ai.model.AiVisualizationSpec.VisualizationType;
+import pl.lsobotka.firetmsdashboard.ai.query.DynamicSqlQueryResult;
 
 @Service
 public class AiVisualizationValidator {

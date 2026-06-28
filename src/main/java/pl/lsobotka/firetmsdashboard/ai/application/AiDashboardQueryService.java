@@ -1,4 +1,4 @@
-package pl.lsobotka.firetmsdashboard.ai;
+package pl.lsobotka.firetmsdashboard.ai.application;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -6,6 +6,12 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import pl.lsobotka.firetmsdashboard.ai.integration.openai.OpenAiSqlGenerationException;
+import pl.lsobotka.firetmsdashboard.ai.integration.openai.OpenAiVisualizationGenerator;
+import pl.lsobotka.firetmsdashboard.ai.query.DynamicSqlQueryResult;
+import pl.lsobotka.firetmsdashboard.ai.query.DynamicSqlQueryService;
+import pl.lsobotka.firetmsdashboard.ai.query.SqlSafetyValidator;
+import pl.lsobotka.firetmsdashboard.ai.query.SqlValidationException;
 
 @Service
 public class AiDashboardQueryService {

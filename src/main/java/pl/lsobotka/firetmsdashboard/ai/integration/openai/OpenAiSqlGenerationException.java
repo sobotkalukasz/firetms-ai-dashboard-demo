@@ -1,4 +1,4 @@
-package pl.lsobotka.firetmsdashboard.ai;
+package pl.lsobotka.firetmsdashboard.ai.integration.openai;
 
 public class OpenAiSqlGenerationException extends RuntimeException {
 
