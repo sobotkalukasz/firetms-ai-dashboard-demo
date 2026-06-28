@@ -1,7 +1,11 @@
 package pl.lsobotka.firetmsdashboard.ui;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
@@ -9,89 +13,111 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextArea;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
-import org.springframework.dao.DataAccessException;
 import pl.lsobotka.firetmsdashboard.MainView;
+import pl.lsobotka.firetmsdashboard.ai.AiDashboardExecutionResult;
+import pl.lsobotka.firetmsdashboard.ai.AiDashboardQueryException;
+import pl.lsobotka.firetmsdashboard.ai.AiDashboardQueryService;
 import pl.lsobotka.firetmsdashboard.ai.AiQueryGenerationResult;
+import pl.lsobotka.firetmsdashboard.ai.AiQueryHistoryEntry;
 import pl.lsobotka.firetmsdashboard.ai.AiVisualizationSpec;
 import pl.lsobotka.firetmsdashboard.ai.AiVisualizationValidationException;
 import pl.lsobotka.firetmsdashboard.ai.AiVisualizationValidator;
 import pl.lsobotka.firetmsdashboard.ai.DynamicSqlQueryResult;
-import pl.lsobotka.firetmsdashboard.ai.DynamicSqlQueryService;
-import pl.lsobotka.firetmsdashboard.ai.OpenAiSqlGenerationException;
-import pl.lsobotka.firetmsdashboard.ai.OpenAiVisualizationGenerator;
 import pl.lsobotka.firetmsdashboard.ai.SqlSafetyValidator;
-import pl.lsobotka.firetmsdashboard.ai.SqlValidationException;
 import pl.lsobotka.firetmsdashboard.ui.layout.AppNavigationItem;
 import pl.lsobotka.firetmsdashboard.ui.layout.AppNavigationSection;
 
 @Route(value = MainView.AI_DASHBOARD_ROUTE, layout = MainView.class)
 @PageTitle("AI Dashboard Experiment")
 @AppNavigationItem(section = AppNavigationSection.EXPERIMENTS, label = "AI Dashboard", order = 10)
+@CssImport("./styles/ai-dashboard-view.css")
 public class AiDashboardExperimentView extends VerticalLayout {
 
     private static final String OPENAI_API_KEY_REQUIRED_MESSAGE = "OpenAI API key is required for this AI experiment.";
     private static final String PROMPT_REQUIRED_MESSAGE = "Prompt is required for this AI experiment.";
-    private static final String OPENAI_SOURCE_MESSAGE = "Generated using OpenAI SQL and visualization generation";
-    private static final String EMPTY_RESULTS_MESSAGE = "The generated query returned no rows.";
-    private static final String CHART_VALIDATION_PREFIX = "Chart was not rendered: ";
+    private static final String EMPTY_RESULTS_MESSAGE = "The generated query ran successfully but returned no rows.";
+    private static final String CHART_VALIDATION_PREFIX = "Visualization was skipped: ";
+    private static final DateTimeFormatter HISTORY_TIMESTAMP = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final PasswordField openAiApiKeyField = new PasswordField("OpenAI API key");
     private final TextArea promptField = new TextArea("Prompt");
+    private final Button generateButton = new Button("Generate");
+    private final ProgressBar progressBar = new ProgressBar();
     private final Div status = new Div();
     private final H3 resultTitle = new H3();
     private final Paragraph resultExplanation = new Paragraph();
-    private final Div chartValidationMessage = new Div();
+    private final HorizontalLayout metadataBar = new HorizontalLayout();
+    private final Span rowCountBadge = createMetricBadge();
+    private final Span openAiDurationBadge = createMetricBadge();
+    private final Span sqlDurationBadge = createMetricBadge();
+    private final Div visualizationMessage = new Div();
     private final Div chartContainer = new Div();
-    private final Div source = new Div();
     private final Grid<Map<String, Object>> resultGrid = new Grid<>();
     private final TextArea generatedSqlArea = new TextArea();
     private final Details generatedSqlDetails = new Details("Generated SQL", generatedSqlArea);
-    private final OpenAiVisualizationGenerator queryGenerator;
-    private final DynamicSqlQueryService dynamicSqlQueryService;
-    private final SqlSafetyValidator sqlSafetyValidator;
+    private final Grid<AiQueryHistoryEntry> historyGrid = new Grid<>(AiQueryHistoryEntry.class, false);
+    private final AiDashboardQueryService aiDashboardQueryService;
     private final AiVisualizationValidator visualizationValidator;
     private final AiVisualizationChartFactory visualizationChartFactory;
+    private final ExecutorService executorService;
 
     public AiDashboardExperimentView(
-            OpenAiVisualizationGenerator queryGenerator,
-            DynamicSqlQueryService dynamicSqlQueryService,
+            AiDashboardQueryService aiDashboardQueryService,
             SqlSafetyValidator sqlSafetyValidator,
             AiVisualizationValidator visualizationValidator,
-            AiVisualizationChartFactory visualizationChartFactory) {
-        this.queryGenerator = queryGenerator;
-        this.dynamicSqlQueryService = dynamicSqlQueryService;
-        this.sqlSafetyValidator = sqlSafetyValidator;
+            AiVisualizationChartFactory visualizationChartFactory,
+            ExecutorService aiDashboardExecutor) {
+        this.aiDashboardQueryService = aiDashboardQueryService;
         this.visualizationValidator = visualizationValidator;
         this.visualizationChartFactory = visualizationChartFactory;
+        this.executorService = aiDashboardExecutor;
         setPadding(true);
         setSpacing(true);
-        setMaxWidth("1200px");
+        setWidthFull();
+        addClassName("ai-dashboard-view");
 
         H2 heading = new H2("AI Dashboard Experiment");
         Paragraph description = new Paragraph(
                 "This page uses OpenAI to generate SQL and a visualization spec against a restricted invoice view. "
-                        + "Only the prompt, safe schema, and SQL rules are sent to OpenAI. Invoice rows stay local.");
+                        + "Only the prompt, safe schema, and SQL rules are sent to OpenAI. Invoice rows stay local, and "
+                        + "history stores only sanitized metadata.");
 
         configureOpenAiApiKeyField();
         configurePromptField();
-        configureSource();
+        configureProgressBar();
         configureGrid();
         configureChartContainer();
-        configureChartValidationMessage();
+        configureVisualizationMessage();
         configureGeneratedSqlArea();
         configureResultSummary();
+        configureMetadataBar();
+        configureHistoryGrid();
 
-        Button generateButton = new Button("Generate", event -> generateDashboard());
+        generateButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        generateButton.setDisableOnClick(true);
+        generateButton.addClickListener(event -> generateDashboard(promptField.getValue()));
+
+        HorizontalLayout actionBar = new HorizontalLayout(generateButton, progressBar);
+        actionBar.setAlignItems(Alignment.CENTER);
+        actionBar.setWidthFull();
+        actionBar.expand(progressBar);
 
         add(
                 heading,
@@ -99,18 +125,20 @@ public class AiDashboardExperimentView extends VerticalLayout {
                 createPromptExamples(),
                 openAiApiKeyField,
                 promptField,
-                generateButton,
+                actionBar,
                 status,
                 resultTitle,
                 resultExplanation,
-                source,
-                chartValidationMessage,
+                metadataBar,
+                visualizationMessage,
                 createSection("Visualization", chartContainer),
                 createSection("Result Grid", resultGrid),
                 generatedSqlDetails,
+                createSection("Recent Query History", historyGrid),
                 new Details("Restricted AI schema", new Text(sqlSafetyValidator.schemaDescription())));
 
         showInitialStatus();
+        refreshHistory();
     }
 
     private void configureOpenAiApiKeyField() {
@@ -133,11 +161,17 @@ public class AiDashboardExperimentView extends VerticalLayout {
         promptField.setErrorMessage(PROMPT_REQUIRED_MESSAGE);
     }
 
+    private void configureProgressBar() {
+        progressBar.setIndeterminate(true);
+        progressBar.setVisible(false);
+        progressBar.setWidthFull();
+    }
+
     private void configureGrid() {
         resultGrid.setWidthFull();
         resultGrid.setMinHeight("20rem");
         resultGrid.addThemeVariants(GridVariant.LUMO_ROW_STRIPES);
-        resultGrid.setEmptyStateText("No generated SQL result has been applied yet.");
+        resultGrid.setEmptyStateText("No AI query has been run yet. Generate a prompt to inspect local invoice data.");
     }
 
     private void configureChartContainer() {
@@ -145,16 +179,9 @@ public class AiDashboardExperimentView extends VerticalLayout {
         chartContainer.setVisible(false);
     }
 
-    private void configureChartValidationMessage() {
-        chartValidationMessage.getStyle().set("white-space", "pre-wrap");
-        chartValidationMessage.getStyle().set("color", "var(--lumo-error-text-color)");
-        chartValidationMessage.setVisible(false);
-    }
-
-    private void configureSource() {
-        source.getStyle().set("white-space", "pre-wrap");
-        source.getStyle().set("font-weight", "600");
-        source.setVisible(false);
+    private void configureVisualizationMessage() {
+        visualizationMessage.addClassName("ai-dashboard-message");
+        visualizationMessage.setVisible(false);
     }
 
     private void configureGeneratedSqlArea() {
@@ -170,11 +197,39 @@ public class AiDashboardExperimentView extends VerticalLayout {
         resultExplanation.setVisible(false);
     }
 
+    private void configureMetadataBar() {
+        metadataBar.addClassName("ai-dashboard-metadata");
+        metadataBar.setSpacing(true);
+        metadataBar.setVisible(false);
+        metadataBar.add(rowCountBadge, openAiDurationBadge, sqlDurationBadge);
+    }
+
+    private void configureHistoryGrid() {
+        historyGrid.setWidthFull();
+        historyGrid.addThemeVariants(GridVariant.LUMO_ROW_STRIPES);
+        historyGrid.setEmptyStateText("No AI history yet. Run a prompt to store sanitized metadata only.");
+        historyGrid.addColumn(entry -> formatTimestamp(entry.createdAt())).setHeader("Created").setAutoWidth(true).setFlexGrow(0);
+        historyGrid.addColumn(entry -> summarize(entry.prompt(), 96)).setHeader("Prompt").setAutoWidth(true).setFlexGrow(1);
+        historyGrid.addColumn(entry -> entry.status().name()).setHeader("Status").setAutoWidth(true).setFlexGrow(0);
+        historyGrid.addColumn(entry -> summarize(entry.title(), 48)).setHeader("Title").setAutoWidth(true).setFlexGrow(1);
+        historyGrid.addColumn(entry -> entry.rowCount() == null ? "-" : Integer.toString(entry.rowCount())).setHeader("Rows")
+                .setAutoWidth(true)
+                .setFlexGrow(0);
+        historyGrid.addColumn(entry -> formatDuration(entry.openAiDurationMs())).setHeader("OpenAI").setAutoWidth(true)
+                .setFlexGrow(0);
+        historyGrid.addColumn(entry -> formatDuration(entry.sqlDurationMs())).setHeader("SQL").setAutoWidth(true).setFlexGrow(0);
+        historyGrid.addColumn(entry -> summarize(entry.sanitizedErrorMessage(), 80)).setHeader("Error").setAutoWidth(true)
+                .setFlexGrow(1);
+        historyGrid.addColumn(new ComponentRenderer<>(this::createHistoryAction)).setHeader("Action").setAutoWidth(true)
+                .setFlexGrow(0);
+    }
+
     private VerticalLayout createSection(String title, com.vaadin.flow.component.Component content) {
         H3 heading = new H3(title);
         VerticalLayout section = new VerticalLayout(heading, content);
         section.setPadding(false);
         section.setSpacing(true);
+        section.setWidthFull();
         return section;
     }
 
@@ -192,47 +247,141 @@ public class AiDashboardExperimentView extends VerticalLayout {
                 Enter an OpenAI API key and a prompt to run this experiment.
 
                 OpenAI generates SQL and a visualization spec from your prompt plus the restricted schema. Invoice rows are never sent to OpenAI.
-                """);
+                Query history stores only the prompt and sanitized metadata, not secrets or result rows.
+                """, StatusTone.INFO);
         clearResults();
     }
 
-    private void generateDashboard() {
+    private void generateDashboard(String requestedPrompt) {
         String apiKey = openAiApiKeyField.getValue() == null ? "" : openAiApiKeyField.getValue().trim();
-        String prompt = promptField.getValue() == null ? "" : promptField.getValue().trim();
+        String prompt = requestedPrompt == null ? "" : requestedPrompt.trim();
         openAiApiKeyField.setInvalid(false);
         promptField.setInvalid(false);
 
         if (apiKey.isEmpty()) {
             openAiApiKeyField.setInvalid(true);
-            showStatus(OPENAI_API_KEY_REQUIRED_MESSAGE);
+            showStatus(OPENAI_API_KEY_REQUIRED_MESSAGE, StatusTone.ERROR);
             clearResults();
+            generateButton.setEnabled(true);
             return;
         }
 
         if (prompt.isEmpty()) {
             promptField.setInvalid(true);
-            showStatus(PROMPT_REQUIRED_MESSAGE);
+            showStatus(PROMPT_REQUIRED_MESSAGE, StatusTone.ERROR);
             clearResults();
+            generateButton.setEnabled(true);
             return;
         }
 
-        try {
-            showStatus("Submitting prompt to OpenAI for SQL and visualization generation.");
-            AiQueryGenerationResult generation = queryGenerator.generate(apiKey, prompt);
-            QueryExecution execution = executeQueryWithCorrection(apiKey, prompt, generation);
+        promptField.setValue(prompt);
+        setRunningState(true);
+        showStatus("Generating SQL and visualization with OpenAI, then validating and executing the query locally.",
+                StatusTone.INFO);
+        UI ui = UI.getCurrent();
 
-            renderQueryResult(execution.generation(), execution.validatedSql(), execution.queryResult());
-            source.removeAll();
-            source.add(new Text(OPENAI_SOURCE_MESSAGE));
-            source.setVisible(true);
-            showStatus(buildSuccessStatus(execution.queryResult()));
-        } catch (OpenAiSqlGenerationException | SqlValidationException exception) {
+        executorService.execute(() -> {
+            try {
+                AiDashboardExecutionResult result = aiDashboardQueryService.execute(apiKey, prompt);
+                if (ui != null && ui.isAttached()) {
+                    ui.access(() -> {
+                        renderQueryResult(result);
+                        showStatus(buildSuccessStatus(result), StatusTone.SUCCESS);
+                        setRunningState(false);
+                        refreshHistory();
+                    });
+                }
+            } catch (AiDashboardQueryException exception) {
+                if (ui != null && ui.isAttached()) {
+                    ui.access(() -> {
+                        clearResults();
+                        showStatus(exception.getMessage(), StatusTone.ERROR);
+                        setRunningState(false);
+                        refreshHistory();
+                    });
+                }
+            } catch (RuntimeException exception) {
+                if (ui != null && ui.isAttached()) {
+                    ui.access(() -> {
+                        clearResults();
+                        showStatus("The AI dashboard request failed before a safe result could be rendered.", StatusTone.ERROR);
+                        setRunningState(false);
+                        refreshHistory();
+                    });
+                }
+            }
+        });
+    }
+
+    private void setRunningState(boolean running) {
+        generateButton.setEnabled(!running);
+        progressBar.setVisible(running);
+        openAiApiKeyField.setEnabled(!running);
+        promptField.setEnabled(!running);
+    }
+
+    private void restoreHistory(Long historyId) {
+        try {
+            AiDashboardExecutionResult result = aiDashboardQueryService.restoreFromHistory(historyId);
+            renderQueryResult(result);
+            showStatus("Restored the saved SQL and visualization metadata locally without calling OpenAI.", StatusTone.SUCCESS);
+            refreshHistory();
+        } catch (NoSuchElementException exception) {
             clearResults();
-            showStatus(exception.getMessage());
+            showStatus(exception.getMessage(), StatusTone.ERROR);
+            refreshHistory();
         } catch (RuntimeException exception) {
             clearResults();
-            showStatus("The SQL query could not be executed safely. Try refining the prompt.");
+            showStatus("The saved history entry could not be restored safely against the restricted invoice view.", StatusTone.ERROR);
+            refreshHistory();
         }
+    }
+
+    private void deleteHistory(Long historyId) {
+        aiDashboardQueryService.deleteHistory(historyId);
+        showStatus("Deleted the selected AI query history entry.", StatusTone.SUCCESS);
+        refreshHistory();
+    }
+
+    private void renderQueryResult(AiDashboardExecutionResult result) {
+        renderQueryResult(result.generation(), result.validatedSql(), result.queryResult());
+        rowCountBadge.setText("Rows: " + result.queryResult().rows().size());
+        openAiDurationBadge.setText("OpenAI: " + result.openAiDurationMs() + " ms");
+        sqlDurationBadge.setText("SQL: " + result.sqlDurationMs() + " ms");
+        metadataBar.setVisible(true);
+    }
+
+    private Component createHistoryAction(AiQueryHistoryEntry entry) {
+        Button restoreButton = new Button("Restore", event -> {
+            promptField.setValue(entry.prompt());
+            restoreHistory(entry.id());
+        });
+        restoreButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        restoreButton.setEnabled(entry.generatedSql() != null && !entry.generatedSql().isBlank());
+
+        Button regenerateButton = new Button("Regenerate", event -> {
+            promptField.setValue(entry.prompt());
+            generateDashboard(entry.prompt());
+        });
+        regenerateButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+
+        Button deleteButton = new Button("Delete", event -> deleteHistory(entry.id()));
+        deleteButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
+
+        HorizontalLayout actions = new HorizontalLayout(restoreButton, regenerateButton, deleteButton);
+        actions.setPadding(false);
+        actions.setSpacing(true);
+        return actions;
+    }
+
+    private void refreshHistory() {
+        historyGrid.setItems(aiDashboardQueryService.findRecentHistory());
+    }
+
+    private Span createMetricBadge() {
+        Span badge = new Span();
+        badge.addClassName("ai-dashboard-badge");
+        return badge;
     }
 
     private void renderQueryResult(
@@ -247,30 +396,59 @@ public class AiDashboardExperimentView extends VerticalLayout {
         generatedSqlDetails.setVisible(true);
         configureDynamicColumns(queryResult.columns());
         resultGrid.setItems(queryResult.rows());
+        resultGrid.setEmptyStateText(EMPTY_RESULTS_MESSAGE);
         renderVisualization(generation, queryResult);
     }
 
     private void clearResults() {
-        source.removeAll();
-        source.setVisible(false);
+        metadataBar.setVisible(false);
         resultTitle.setVisible(false);
         resultExplanation.setVisible(false);
         resultTitle.setText("");
         resultExplanation.setText("");
-        chartValidationMessage.removeAll();
-        chartValidationMessage.setVisible(false);
+        visualizationMessage.removeAll();
+        visualizationMessage.setVisible(false);
         chartContainer.removeAll();
         chartContainer.setVisible(false);
         generatedSqlArea.clear();
         generatedSqlDetails.setVisible(false);
         resultGrid.removeAllColumns();
+        configureDynamicColumns(List.of());
         resultGrid.setItems(List.of());
+        resultGrid.setEmptyStateText("No AI query has been run yet. Generate a prompt to inspect local invoice data.");
     }
 
-    private void showStatus(String message) {
+    private void showStatus(String message, StatusTone tone) {
         status.removeAll();
+        status.setClassName("ai-dashboard-status");
+        status.getElement().setAttribute("data-state", tone.name().toLowerCase(Locale.ROOT));
         status.getStyle().set("white-space", "pre-wrap");
         status.add(new Text(message));
+    }
+
+    private void renderVisualization(AiQueryGenerationResult generation, DynamicSqlQueryResult queryResult) {
+        visualizationMessage.removeAll();
+        visualizationMessage.setVisible(false);
+        chartContainer.removeAll();
+        chartContainer.setVisible(false);
+
+        try {
+            AiVisualizationSpec validatedSpec = visualizationValidator.validate(generation.visualizationSpec(), queryResult);
+            if (validatedSpec.visualization() == AiVisualizationSpec.VisualizationType.TABLE) {
+                showVisualizationMessage("The generated result is best represented as a table, so no chart was rendered.");
+                return;
+            }
+            chartContainer.add(visualizationChartFactory.createChart(generation.title(), validatedSpec, queryResult));
+            chartContainer.setVisible(true);
+        } catch (AiVisualizationValidationException exception) {
+            showVisualizationMessage(CHART_VALIDATION_PREFIX + exception.getMessage());
+        }
+    }
+
+    private void showVisualizationMessage(String message) {
+        visualizationMessage.removeAll();
+        visualizationMessage.add(new Text(message));
+        visualizationMessage.setVisible(true);
     }
 
     private void configureDynamicColumns(List<String> columns) {
@@ -284,59 +462,27 @@ public class AiDashboardExperimentView extends VerticalLayout {
         }
     }
 
-    private QueryExecution executeQueryWithCorrection(String apiKey, String prompt, AiQueryGenerationResult generation) {
-        String validatedSql = sqlSafetyValidator.validateAndNormalize(generation.sql());
-        try {
-            DynamicSqlQueryResult queryResult = dynamicSqlQueryService.executeValidatedQuery(validatedSql);
-            return new QueryExecution(generation, validatedSql, queryResult);
-        } catch (DataAccessException exception) {
-            String correctionFeedback = extractCorrectionFeedback(exception);
-            AiQueryGenerationResult correctedGeneration =
-                    queryGenerator.correct(apiKey, prompt, validatedSql, correctionFeedback);
-            String correctedSql = sqlSafetyValidator.validateAndNormalize(correctedGeneration.sql());
-            DynamicSqlQueryResult correctedResult = dynamicSqlQueryService.executeValidatedQuery(correctedSql);
-            return new QueryExecution(correctedGeneration, correctedSql, correctedResult);
-        }
-    }
-
-    private void renderVisualization(AiQueryGenerationResult generation, DynamicSqlQueryResult queryResult) {
-        chartValidationMessage.removeAll();
-        chartValidationMessage.setVisible(false);
-        chartContainer.removeAll();
-        chartContainer.setVisible(false);
-
-        try {
-            AiVisualizationSpec validatedSpec = visualizationValidator.validate(generation.visualizationSpec(), queryResult);
-            if (validatedSpec.visualization() == AiVisualizationSpec.VisualizationType.TABLE) {
-                return;
-            }
-            chartContainer.add(visualizationChartFactory.createChart(generation.title(), validatedSpec, queryResult));
-            chartContainer.setVisible(true);
-        } catch (AiVisualizationValidationException exception) {
-            chartValidationMessage.add(new Text(CHART_VALIDATION_PREFIX + exception.getMessage()));
-            chartValidationMessage.setVisible(true);
-        }
-    }
-
-    private String buildSuccessStatus(DynamicSqlQueryResult queryResult) {
-        if (queryResult.rows().isEmpty()) {
+    private String buildSuccessStatus(AiDashboardExecutionResult result) {
+        if (result.queryResult().rows().isEmpty()) {
             return EMPTY_RESULTS_MESSAGE;
         }
-        return "OpenAI generated SQL successfully and the query was executed locally.";
+        return "OpenAI generated SQL successfully. The query was validated locally, executed against the restricted invoice view, "
+                + "and returned " + result.queryResult().rows().size() + " row(s).";
     }
 
-    private String extractCorrectionFeedback(DataAccessException exception) {
-        Throwable cause = exception.getMostSpecificCause();
-        if (cause != null && cause.getMessage() != null && !cause.getMessage().isBlank()) {
-            return cause.getMessage();
+    private String summarize(String value, int maxLength) {
+        if (value == null || value.isBlank()) {
+            return "-";
         }
-        return "The SQL could not be executed by H2. Return corrected H2-compatible SQL.";
+        return value.length() <= maxLength ? value : value.substring(0, maxLength - 1) + "…";
     }
 
-    private record QueryExecution(
-            AiQueryGenerationResult generation,
-            String validatedSql,
-            DynamicSqlQueryResult queryResult) {
+    private String formatDuration(Long durationMs) {
+        return durationMs == null ? "-" : durationMs + " ms";
+    }
+
+    private String formatTimestamp(java.time.LocalDateTime createdAt) {
+        return createdAt == null ? "-" : createdAt.format(HISTORY_TIMESTAMP);
     }
 
     private String formatValue(Object value) {
@@ -353,5 +499,11 @@ public class AiDashboardExperimentView extends VerticalLayout {
     private String formatColumnWord(String word) {
         String normalized = word.toLowerCase(Locale.ROOT);
         return Character.toUpperCase(normalized.charAt(0)) + normalized.substring(1);
+    }
+
+    private enum StatusTone {
+        INFO,
+        SUCCESS,
+        ERROR
     }
 }

@@ -1,0 +1,52 @@
+.ai-dashboard-view {
+  background:
+    radial-gradient(circle at top left, rgba(17, 140, 120, 0.08), transparent 32%),
+    linear-gradient(180deg, rgba(246, 249, 247, 0.9), rgba(255, 255, 255, 1));
+}
+
+.ai-dashboard-status {
+  width: 100%;
+  border-radius: var(--lumo-border-radius-l);
+  padding: var(--lumo-space-m);
+  border: 1px solid transparent;
+  box-sizing: border-box;
+}
+
+.ai-dashboard-status[data-state="info"] {
+  background: rgba(1, 121, 111, 0.08);
+  border-color: rgba(1, 121, 111, 0.2);
+}
+
+.ai-dashboard-status[data-state="success"] {
+  background: rgba(15, 143, 74, 0.08);
+  border-color: rgba(15, 143, 74, 0.2);
+}
+
+.ai-dashboard-status[data-state="error"] {
+  background: rgba(186, 52, 66, 0.08);
+  border-color: rgba(186, 52, 66, 0.24);
+  color: var(--lumo-error-text-color);
+}
+
+.ai-dashboard-metadata {
+  flex-wrap: wrap;
+}
+
+.ai-dashboard-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(32, 35, 39, 0.08);
+  font-size: var(--lumo-font-size-s);
+  font-weight: 600;
+}
+
+.ai-dashboard-message {
+  width: 100%;
+  border-left: 4px solid rgba(173, 98, 0, 0.45);
+  background: rgba(255, 214, 102, 0.14);
+  padding: var(--lumo-space-s) var(--lumo-space-m);
+  border-radius: var(--lumo-border-radius-m);
+  box-sizing: border-box;
+}

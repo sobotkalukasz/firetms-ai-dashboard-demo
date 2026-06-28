@@ -72,6 +72,11 @@ The AI database surface is intentionally limited:
 - the OpenAI API key is used only for AI requests and is never exposed to FireTMS
 - only validated `SELECT` queries against `ai_sales_invoice_view` are executed
 
+The AI dashboard also keeps a recent query history for UX and reruns. That
+history stores only sanitized metadata such as prompt, generated SQL, status,
+durations, explanation, and row count. It does not store OpenAI or FireTMS API
+keys, result rows, or `raw_json`.
+
 Secret handling rules for this demo:
 
 - enter the FireTMS API key only in `/firetms/sales-invoices`

@@ -57,7 +57,7 @@ public class FireTmsSalesInvoicesView extends VerticalLayout {
         setSizeFull();
         setPadding(true);
         setSpacing(true);
-        setMaxWidth("1400px");
+        setWidthFull();
 
         apiKeyField.setWidthFull();
         apiKeyField.setRevealButtonVisible(false);
