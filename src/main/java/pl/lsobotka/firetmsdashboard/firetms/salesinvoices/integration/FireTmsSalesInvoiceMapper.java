@@ -41,6 +41,7 @@ public class FireTmsSalesInvoiceMapper {
                 invoiceNumber,
                 readDate(item, "issuanceDate"),
                 readDate(item, "sellDate"),
+                readDate(item, "calculatedPaymentTerm", "paymentDueDate", "paymentDate"),
                 readText(item, "client.companyName"),
                 readText(item, "ksefNumber.number"),
                 readDecimal(item, "totalNet.amount"),

@@ -22,6 +22,7 @@ class FireTmsSalesInvoiceMapperTest {
                       "documentNumber": "FV/1/06/2019",
                       "issuanceDate": "2019-06-28T08:21:08.087+02:00",
                       "sellDate": "2019-06-29T08:20:08.087+02:00",
+                      "calculatedPaymentTerm": "2019-07-12T08:23:08.087+02:00",
                       "client": {"companyName": "Agm Group Sp.z.o.o"},
                       "ksefNumber": {"number": "9999999999-IZ202602-FFFFFFFFFFFF-FF"},
                       "outstandingToPay": {"amount": 4500, "currencyCode": "EUR"},
@@ -40,6 +41,7 @@ class FireTmsSalesInvoiceMapperTest {
             assertThat(invoice.invoiceNumber()).isEqualTo("FV/1/06/2019");
             assertThat(invoice.issueDate()).isEqualTo(LocalDate.of(2019, 6, 28));
             assertThat(invoice.saleDate()).isEqualTo(LocalDate.of(2019, 6, 29));
+            assertThat(invoice.paymentDueDate()).isEqualTo(LocalDate.of(2019, 7, 12));
             assertThat(invoice.contractorName()).isEqualTo("Agm Group Sp.z.o.o");
             assertThat(invoice.ksefNumber()).isEqualTo("9999999999-IZ202602-FFFFFFFFFFFF-FF");
             assertThat(invoice.netAmount()).isEqualByComparingTo("10000");

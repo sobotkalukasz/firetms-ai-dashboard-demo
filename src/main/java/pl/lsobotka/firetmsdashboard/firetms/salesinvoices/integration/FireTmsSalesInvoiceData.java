@@ -8,6 +8,7 @@ public record FireTmsSalesInvoiceData(
         String invoiceNumber,
         LocalDate issueDate,
         LocalDate saleDate,
+        LocalDate paymentDueDate,
         String contractorName,
         String ksefNumber,
         BigDecimal netAmount,

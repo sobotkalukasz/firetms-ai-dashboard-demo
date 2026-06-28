@@ -94,10 +94,12 @@ public class SalesInvoiceSyncService {
     }
 
     private void apply(FireTmsSalesInvoiceData imported, SalesInvoiceEntity invoice) {
+        LocalDateTime now = LocalDateTime.now(clock);
         invoice.setExternalId(imported.externalId());
         invoice.setInvoiceNumber(imported.invoiceNumber());
         invoice.setIssueDate(imported.issueDate());
         invoice.setSaleDate(imported.saleDate());
+        invoice.setPaymentDueDate(imported.paymentDueDate());
         invoice.setContractorName(imported.contractorName());
         invoice.setKsefNumber(imported.ksefNumber());
         invoice.setNetAmount(imported.netAmount());
@@ -106,7 +108,10 @@ public class SalesInvoiceSyncService {
         invoice.setCurrency(imported.currency());
         invoice.setStatus(imported.status());
         invoice.setRawJson(imported.rawJson());
-        invoice.setUpdatedAt(LocalDateTime.now(clock));
+        if (invoice.getImportedAt() == null) {
+            invoice.setImportedAt(now);
+        }
+        invoice.setUpdatedAt(now);
     }
 
     private void logSummary(SalesInvoiceSyncResult result) {

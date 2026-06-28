@@ -31,7 +31,10 @@ class SalesInvoiceQueryServiceTest {
 
         List<SalesInvoiceRow> result = service.findSalesInvoices("Acme");
 
-        assertThat(result).singleElement().extracting(SalesInvoiceRow::invoiceNumber).isEqualTo("INV-2026/01");
+        assertThat(result).singleElement().satisfies(row -> {
+            assertThat(row.invoiceNumber()).isEqualTo("INV-2026/01");
+            assertThat(row.paymentDueDate()).isEqualTo(LocalDate.of(2026, 6, 30));
+        });
         verify(repository).findByInvoiceNumberContainingIgnoreCaseOrContractorNameContainingIgnoreCaseOrderByIssueDateDescUpdatedAtDesc(
                 "Acme", "Acme");
     }
@@ -55,6 +58,7 @@ class SalesInvoiceQueryServiceTest {
         invoice.setContractorName(contractorName);
         invoice.setIssueDate(LocalDate.of(2026, 6, 20));
         invoice.setSaleDate(LocalDate.of(2026, 6, 18));
+        invoice.setPaymentDueDate(LocalDate.of(2026, 6, 30));
         invoice.setUpdatedAt(LocalDateTime.of(2026, 6, 28, 12, 30));
         return invoice;
     }
