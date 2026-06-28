@@ -31,6 +31,9 @@ public class SalesInvoiceEntity {
     @Column(name = "sale_date")
     private LocalDate saleDate;
 
+    @Column(name = "payment_due_date")
+    private LocalDate paymentDueDate;
+
     @Column(name = "contractor_name")
     private String contractorName;
 
@@ -58,6 +61,9 @@ public class SalesInvoiceEntity {
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    @Column(name = "imported_at")
+    private LocalDateTime importedAt;
 
     public Long getId() {
         return id;
@@ -93,6 +99,14 @@ public class SalesInvoiceEntity {
 
     public void setSaleDate(LocalDate saleDate) {
         this.saleDate = saleDate;
+    }
+
+    public LocalDate getPaymentDueDate() {
+        return paymentDueDate;
+    }
+
+    public void setPaymentDueDate(LocalDate paymentDueDate) {
+        this.paymentDueDate = paymentDueDate;
     }
 
     public String getContractorName() {
@@ -165,5 +179,13 @@ public class SalesInvoiceEntity {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public LocalDateTime getImportedAt() {
+        return importedAt;
+    }
+
+    public void setImportedAt(LocalDateTime importedAt) {
+        this.importedAt = importedAt;
     }
 }

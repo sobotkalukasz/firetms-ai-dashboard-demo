@@ -45,6 +45,7 @@ class SalesInvoiceSyncServiceTest {
                       "documentNumber": "0002/06/2019",
                       "issuanceDate": "2019-06-28T08:21:08.087+02:00",
                       "sellDate": "2019-06-29T08:20:08.087+02:00",
+                      "calculatedPaymentTerm": "2019-07-15T08:23:08.087+02:00",
                       "client": {"companyName": "Agm Group Sp.z.o.o"},
                       "ksefNumber": {"number": "9999999999-IZ202602-FFFFFFFFFFFF-FF"},
                       "outstandingToPay": {"amount": 900.25, "currencyCode": "EUR"},
@@ -86,6 +87,8 @@ class SalesInvoiceSyncServiceTest {
         assertThat(invoice.getStatus()).isEqualTo("ISSUED");
         assertThat(invoice.getIssueDate()).isEqualTo(LocalDate.of(2019, 6, 28));
         assertThat(invoice.getSaleDate()).isEqualTo(LocalDate.of(2019, 6, 29));
+        assertThat(invoice.getPaymentDueDate()).isEqualTo(LocalDate.of(2019, 7, 15));
+        assertThat(invoice.getImportedAt()).isEqualTo(java.time.LocalDateTime.of(2026, 6, 28, 10, 15, 30));
         assertThat(invoice.getUpdatedAt()).isEqualTo(java.time.LocalDateTime.of(2026, 6, 28, 10, 15, 30));
         assertThat(invoice.getKsefNumber()).isEqualTo("9999999999-IZ202602-FFFFFFFFFFFF-FF");
         assertThat(invoice.getNetAmount()).isEqualByComparingTo("10500");
@@ -132,6 +135,7 @@ class SalesInvoiceSyncServiceTest {
                       "documentNumber": "0003/06/2019",
                       "issuanceDate": "2019-06-28T08:21:08.087+02:00",
                       "sellDate": "2019-06-29T08:20:08.087+02:00",
+                      "calculatedPaymentTerm": "2019-07-18T08:23:08.087+02:00",
                       "client": {"companyName": "Existing Client"},
                       "ksefNumber": {"number": "KSEF-EXISTING"},
                       "outstandingToPay": {"amount": 50, "currencyCode": "PLN"},
@@ -163,6 +167,7 @@ class SalesInvoiceSyncServiceTest {
         assertThat(result.updatedInvoices()).isEqualTo(1);
         assertThat(existing.getInvoiceNumber()).isEqualTo("0003/06/2019");
         assertThat(existing.getContractorName()).isEqualTo("Existing Client");
+        assertThat(existing.getPaymentDueDate()).isEqualTo(LocalDate.of(2019, 7, 18));
         assertThat(existing.getKsefNumber()).isEqualTo("KSEF-EXISTING");
         assertThat(existing.getOutstandingToPay()).isEqualByComparingTo("50");
     }

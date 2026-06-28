@@ -38,6 +38,25 @@ page. It currently includes basic sales invoice analytics from persisted
 `sales_invoice` records.
 
 An experimental placeholder for AI-generated dashboards is available at
-`/ai-dashboard`. The current spike is read-only and does not call an LLM yet; it
-exists to define the UI entry point and document the security constraints for a
-future Vaadin AI-generated Grid/Chart integration.
+`/ai-dashboard`. The current spike wires Vaadin AI Grid/Chart controllers to a
+restricted read-only database view named `ai_sales_invoice_view`.
+
+The AI database surface is intentionally limited:
+
+- only `ai_sales_invoice_view` is exposed to AI SQL
+- `raw_json` is excluded from the view
+- the FireTMS API key is never exposed to AI
+- the custom `DatabaseProvider` rejects non-`SELECT` SQL and direct access to
+  underlying tables
+
+The Vaadin experimental AI feature flag is enabled in
+`src/main/resources/vaadin-featureflags.properties`.
+
+To enable live AI prompting on `/ai-dashboard`, the application still needs a
+supported LLM provider bean at runtime:
+
+- Spring AI `ChatModel`, or
+- LangChain4j `ChatModel`
+
+Without one of those beans, `/ai-dashboard` stays in safe placeholder mode and
+shows the wired grid/chart surfaces without sending prompts to any LLM.
