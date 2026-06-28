@@ -2,6 +2,7 @@ package pl.lsobotka.firetmsdashboard.ui.layout;
 
 import com.vaadin.flow.component.Component;
 import java.util.List;
+import pl.lsobotka.firetmsdashboard.ui.DashboardView;
 import pl.lsobotka.firetmsdashboard.ui.FireTmsSalesInvoicesView;
 
 public final class MainNavigationConfiguration {
@@ -14,6 +15,6 @@ public final class MainNavigationConfiguration {
     }
 
     public static List<Class<? extends Component>> navigationTargets() {
-        return List.of(FireTmsSalesInvoicesView.class);
+        return List.of(DashboardView.class, FireTmsSalesInvoicesView.class);
     }
 }

@@ -32,3 +32,7 @@ The H2 console is available at `http://localhost:8080/h2-console` with JDBC URL
 The first FireTMS integration spike is available at `/firetms/sales-invoices`.
 It lets you enter a FireTMS API key for the current session, choose an issue-date
 range, call `/invoices/sales/issued`, and inspect a short technical JSON preview.
+
+The main dashboard is available at `/dashboard` and is also the default landing
+page. It currently includes basic sales invoice analytics from persisted
+`sales_invoice` records.
