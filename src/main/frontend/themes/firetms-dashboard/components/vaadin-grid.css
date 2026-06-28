@@ -1,0 +1,13 @@
+[part~="header-cell"] {
+  background: rgba(103, 80, 164, 0.06);
+  color: #49454f;
+  font-weight: 700;
+}
+
+[part~="cell"] {
+  border-color: rgba(121, 116, 126, 0.1);
+}
+
+[part~="row"]:hover [part~="body-cell"] {
+  background: rgba(103, 80, 164, 0.05);
+}

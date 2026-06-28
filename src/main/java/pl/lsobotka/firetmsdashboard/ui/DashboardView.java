@@ -48,12 +48,14 @@ public class DashboardView extends VerticalLayout {
         setSizeFull();
         setPadding(true);
         setSpacing(true);
-        setMaxWidth("1400px");
+        setWidthFull();
 
         H2 heading = new H2("Dashboard");
         Button refreshButton = new Button("Refresh", event -> refreshAnalytics());
         HorizontalLayout header = new HorizontalLayout(heading, refreshButton);
         header.setAlignItems(Alignment.END);
+        header.setWidthFull();
+        header.expand(heading);
 
         configureMonthlyGrid();
         configureContractorGrid();
@@ -76,6 +78,7 @@ public class DashboardView extends VerticalLayout {
         VerticalLayout section = new VerticalLayout(sectionHeading, chartContainer, grid);
         section.setPadding(false);
         section.setSpacing(true);
+        section.setWidthFull();
         return section;
     }
 
