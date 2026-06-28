@@ -4,6 +4,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 
 public enum AppNavigationSection {
     DASHBOARD("Dashboard", VaadinIcon.DASHBOARD, 10),
+    EXPERIMENTS("Experiments", VaadinIcon.SPARK_LINE, 50),
     INVOICES("Invoices", VaadinIcon.RECORDS, 100);
 
     private final String label;

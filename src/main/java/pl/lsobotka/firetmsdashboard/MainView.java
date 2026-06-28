@@ -15,6 +15,7 @@ public class MainView extends AppLayout implements AfterNavigationObserver {
 
     public static final String DASHBOARD_ROUTE = "dashboard";
     public static final String ISSUED_ROUTE = "firetms/sales-invoices";
+    public static final String AI_DASHBOARD_ROUTE = "ai-dashboard";
 
     private final H1 viewTitle = new H1();
     private final AppNavigation navigation = new AppNavigation(
