@@ -16,8 +16,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.client.RestClient;
+import pl.lsobotka.firetmsdashboard.ai.AiVisualizationSpec.VisualizationType;
 
-class OpenAiSqlGeneratorTest {
+class OpenAiVisualizationGeneratorTest {
 
     private final SqlSafetyValidator sqlSafetyValidator = new SqlSafetyValidator();
     private HttpServer server;
@@ -30,7 +31,7 @@ class OpenAiSqlGeneratorTest {
     }
 
     @Test
-    void generatesSqlUsingOpenAiResponsesApi() throws Exception {
+    void generatesSqlAndVisualizationUsingOpenAiResponsesApi() throws Exception {
         AtomicReference<String> requestBody = new AtomicReference<>();
         AtomicReference<String> authorizationHeader = new AtomicReference<>();
         server = HttpServer.create(new InetSocketAddress(0), 0);
@@ -45,7 +46,7 @@ class OpenAiSqlGeneratorTest {
                           "content": [
                             {
                               "type": "output_text",
-                              "text": "{\\"sql\\":\\"select invoice_number, gross_amount from ai_sales_invoice_view order by gross_amount desc limit 25\\",\\"title\\":\\"Top invoices\\",\\"explanation\\":\\"Lists invoices with the largest gross amounts.\\"}"
+                              "text": "{\\"sql\\":\\"select invoice_number, gross_amount from ai_sales_invoice_view order by gross_amount desc limit 25\\",\\"visualization\\":\\"TABLE\\",\\"title\\":\\"Top invoices\\",\\"xColumn\\":null,\\"yColumn\\":null,\\"seriesColumn\\":null,\\"explanation\\":\\"Lists invoices with the largest gross amounts.\\"}"
                             }
                           ]
                         }
@@ -55,20 +56,21 @@ class OpenAiSqlGeneratorTest {
         });
         server.start();
 
-        OpenAiSqlGenerator generator = generatorForServer("gpt-5.5-mini");
+        OpenAiVisualizationGenerator generator = generatorForServer("gpt-5.5-mini");
 
-        AiSqlGenerationResult result = generator.generate("test-api-key", "Show the biggest invoices");
+        AiQueryGenerationResult result = generator.generate("test-api-key", "Show the biggest invoices");
 
         assertThat(result.sql()).contains("from ai_sales_invoice_view");
         assertThat(result.title()).isEqualTo("Top invoices");
         assertThat(result.explanation()).contains("largest gross amounts");
+        assertThat(result.visualizationSpec().visualization()).isEqualTo(VisualizationType.TABLE);
         assertThat(authorizationHeader.get()).isEqualTo("Bearer test-api-key");
         assertThat(requestBody.get()).contains("Show the biggest invoices");
         assertThat(requestBody.get()).contains("ai_sales_invoice_view");
-        assertThat(requestBody.get()).contains("use the exact view name ai_sales_invoice_view");
-        assertThat(requestBody.get()).contains("never use reserved SQL keywords as aliases such as month");
-        assertThat(requestBody.get()).contains("\"json_schema\"");
-        assertThat(requestBody.get()).doesNotContain("raw_json");
+        assertThat(requestBody.get()).contains("return strict JSON only");
+        assertThat(requestBody.get()).contains("always add a LIMIT");
+        assertThat(requestBody.get()).contains("\"visualization\"");
+        assertThat(requestBody.get()).contains("never query raw_json");
         assertThat(requestBody.get()).doesNotContain("{\"private\":true}");
     }
 
@@ -92,7 +94,7 @@ class OpenAiSqlGeneratorTest {
                               "content": [
                                 {
                                   "type": "output_text",
-                                  "text": "{\\"sql\\":\\"select invoice_number from sales_invoice limit 10\\",\\"title\\":\\"Bad query\\",\\"explanation\\":\\"Uses the wrong table.\\"}"
+                                  "text": "{\\"sql\\":\\"select invoice_number from sales_invoice limit 10\\",\\"visualization\\":\\"TABLE\\",\\"title\\":\\"Bad query\\",\\"xColumn\\":null,\\"yColumn\\":null,\\"seriesColumn\\":null,\\"explanation\\":\\"Uses the wrong table.\\"}"
                                 }
                               ]
                             }
@@ -109,7 +111,7 @@ class OpenAiSqlGeneratorTest {
                           "content": [
                             {
                               "type": "output_text",
-                              "text": "{\\"sql\\":\\"select invoice_number from ai_sales_invoice_view order by issue_date desc limit 10\\",\\"title\\":\\"Recent invoices\\",\\"explanation\\":\\"Lists invoices from the restricted AI view.\\"}"
+                              "text": "{\\"sql\\":\\"select invoice_number from ai_sales_invoice_view order by issue_date desc limit 10\\",\\"visualization\\":\\"TABLE\\",\\"title\\":\\"Recent invoices\\",\\"xColumn\\":null,\\"yColumn\\":null,\\"seriesColumn\\":null,\\"explanation\\":\\"Lists invoices from the restricted AI view.\\"}"
                             }
                           ]
                         }
@@ -119,9 +121,9 @@ class OpenAiSqlGeneratorTest {
         });
         server.start();
 
-        OpenAiSqlGenerator generator = generatorForServer("gpt-5.5-mini");
+        OpenAiVisualizationGenerator generator = generatorForServer("gpt-5.5-mini");
 
-        AiSqlGenerationResult result = generator.generate("test-api-key", "Show recent invoices");
+        AiQueryGenerationResult result = generator.generate("test-api-key", "Show recent invoices");
 
         assertThat(requestCount.get()).isEqualTo(2);
         assertThat(result.sql()).contains("from ai_sales_invoice_view");
@@ -144,7 +146,7 @@ class OpenAiSqlGeneratorTest {
                           "content": [
                             {
                               "type": "output_text",
-                              "text": "{\\"sql\\":\\"select formatdatetime(issue_date, 'yyyy-MM') as month_value, sum(gross_amount) as gross_sales from ai_sales_invoice_view group by formatdatetime(issue_date, 'yyyy-MM') order by month_value limit 100\\",\\"title\\":\\"Monthly gross sales\\",\\"explanation\\":\\"Shows gross sales grouped by issue month.\\"}"
+                              "text": "{\\"sql\\":\\"select formatdatetime(issue_date, 'yyyy-MM') as month_value, sum(gross_amount) as gross_sales from ai_sales_invoice_view group by formatdatetime(issue_date, 'yyyy-MM') order by month_value limit 100\\",\\"visualization\\":\\"LINE\\",\\"title\\":\\"Monthly gross sales\\",\\"xColumn\\":\\"month_value\\",\\"yColumn\\":\\"gross_sales\\",\\"seriesColumn\\":null,\\"explanation\\":\\"Shows gross sales grouped by issue month.\\"}"
                             }
                           ]
                         }
@@ -154,15 +156,16 @@ class OpenAiSqlGeneratorTest {
         });
         server.start();
 
-        OpenAiSqlGenerator generator = generatorForServer("gpt-5.5-mini");
+        OpenAiVisualizationGenerator generator = generatorForServer("gpt-5.5-mini");
 
-        AiSqlGenerationResult result = generator.correct(
+        AiQueryGenerationResult result = generator.correct(
                 "test-api-key",
                 "show monthly gross sales",
                 "select formatdatetime(issue_date, 'yyyy-MM') as month, sum(gross_amount) as gross_sales from ai_sales_invoice_view group by formatdatetime(issue_date, 'yyyy-MM') order by month limit 100",
                 "Syntax error in SQL statement; expected identifier");
 
         assertThat(result.sql()).contains("as month_value");
+        assertThat(result.visualizationSpec().visualization()).isEqualTo(VisualizationType.LINE);
         assertThat(requestBody.get()).contains("The previous SQL was invalid and must be corrected.");
         assertThat(requestBody.get()).contains("as month, sum(gross_amount)");
         assertThat(requestBody.get()).contains("Syntax error in SQL statement; expected identifier");
@@ -179,7 +182,7 @@ class OpenAiSqlGeneratorTest {
                 """));
         server.start();
 
-        OpenAiSqlGenerator generator = generatorForServer("gpt-5.5-mini");
+        OpenAiVisualizationGenerator generator = generatorForServer("gpt-5.5-mini");
 
         assertThatThrownBy(() -> generator.generate("test-api-key", "Show gross sales"))
                 .isInstanceOf(OpenAiSqlGenerationException.class)
@@ -187,7 +190,7 @@ class OpenAiSqlGeneratorTest {
     }
 
     @Test
-    void rejectsMalformedSqlJson() throws Exception {
+    void rejectsMalformedDashboardJson() throws Exception {
         server = HttpServer.create(new InetSocketAddress(0), 0);
         server.createContext("/v1/responses", exchange -> writeJson(exchange, 200, """
                 {
@@ -197,7 +200,7 @@ class OpenAiSqlGeneratorTest {
                       "content": [
                         {
                           "type": "output_text",
-                          "text": "{\\"title\\":\\"Missing SQL\\",\\"explanation\\":\\"bad\\"}"
+                          "text": "{\\"title\\":\\"Missing SQL\\",\\"visualization\\":\\"TABLE\\",\\"xColumn\\":null,\\"yColumn\\":null,\\"seriesColumn\\":null,\\"explanation\\":\\"bad\\"}"
                         }
                       ]
                     }
@@ -206,11 +209,38 @@ class OpenAiSqlGeneratorTest {
                 """));
         server.start();
 
-        OpenAiSqlGenerator generator = generatorForServer("gpt-5.5-mini");
+        OpenAiVisualizationGenerator generator = generatorForServer("gpt-5.5-mini");
 
         assertThatThrownBy(() -> generator.generate("test-api-key", "Show gross sales"))
                 .isInstanceOf(OpenAiSqlGenerationException.class)
-                .hasMessage("OpenAI returned SQL generation output without SQL.");
+                .hasMessage("OpenAI returned dashboard output without SQL.");
+    }
+
+    @Test
+    void rejectsUnsupportedVisualizationType() throws Exception {
+        server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/v1/responses", exchange -> writeJson(exchange, 200, """
+                {
+                  "output": [
+                    {
+                      "type": "message",
+                      "content": [
+                        {
+                          "type": "output_text",
+                          "text": "{\\"sql\\":\\"select invoice_number from ai_sales_invoice_view limit 10\\",\\"visualization\\":\\"SCATTER\\",\\"title\\":\\"Bad visualization\\",\\"xColumn\\":\\"invoice_number\\",\\"yColumn\\":null,\\"seriesColumn\\":null,\\"explanation\\":\\"unsupported\\"}"
+                        }
+                      ]
+                    }
+                  ]
+                }
+                """));
+        server.start();
+
+        OpenAiVisualizationGenerator generator = generatorForServer("gpt-5.5-mini");
+
+        assertThatThrownBy(() -> generator.generate("test-api-key", "Show invoices"))
+                .isInstanceOf(OpenAiSqlGenerationException.class)
+                .hasMessage("OpenAI returned an unsupported visualization type.");
     }
 
     @Test
@@ -225,16 +255,16 @@ class OpenAiSqlGeneratorTest {
                 """));
         server.start();
 
-        OpenAiSqlGenerator generator = generatorForServer("gpt-5.5-mini");
+        OpenAiVisualizationGenerator generator = generatorForServer("gpt-5.5-mini");
 
         assertThatThrownBy(() -> generator.generate("test-api-key", "Show gross sales"))
                 .isInstanceOf(OpenAiSqlGenerationException.class)
                 .hasMessage("The configured OpenAI model is unavailable for this API key. Check the configured model and try again.");
     }
 
-    private OpenAiSqlGenerator generatorForServer(String model) {
+    private OpenAiVisualizationGenerator generatorForServer(String model) {
         String baseUrl = "http://localhost:" + server.getAddress().getPort() + "/v1";
-        return new OpenAiSqlGenerator(
+        return new OpenAiVisualizationGenerator(
                 RestClient.builder().baseUrl(baseUrl).build(),
                 new ObjectMapper(),
                 new AiOpenAiProperties(baseUrl, model),

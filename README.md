@@ -45,7 +45,7 @@ an OpenAI API key in the UI for the current session and uses a restricted
 read-only database view named `ai_sales_invoice_view`.
 
 When you click `Generate`, `/ai-dashboard` now makes a real OpenAI API call to
-generate SQL for the restricted AI view.
+generate SQL and a visualization specification for the restricted AI view.
 
 Only the following are sent to OpenAI:
 
@@ -57,7 +57,9 @@ Only the following are sent to OpenAI:
 Invoice row data is not sent to OpenAI. The app does not send `raw_json`,
 `ai_sales_invoice_view` contents, or any FireTMS API key to OpenAI. Generated
 SQL is parsed from the expected JSON object, validated locally, and only then
-executed against the database.
+executed against the database. The result grid is always shown. When OpenAI
+returns a valid visualization spec, the same query result is also rendered as a
+Vaadin Chart.
 
 The AI database surface is intentionally limited:
 
@@ -65,6 +67,7 @@ The AI database surface is intentionally limited:
 - `raw_json` is excluded from the view
 - invoice rows are not sent to OpenAI
 - generated SQL is validated before execution
+- generated SQL remains restricted to `ai_sales_invoice_view`
 - the FireTMS API key is never exposed to AI
 - the OpenAI API key is used only for AI requests and is never exposed to FireTMS
 - only validated `SELECT` queries against `ai_sales_invoice_view` are executed

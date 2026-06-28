@@ -18,18 +18,69 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 
 @Service
-public class OpenAiSqlGenerator {
+public class OpenAiVisualizationGenerator {
 
-    private static final Logger log = LoggerFactory.getLogger(OpenAiSqlGenerator.class);
-    private static final String RESPONSE_FORMAT_NAME = "ai_dashboard_sql_generation";
+    private static final Logger log = LoggerFactory.getLogger(OpenAiVisualizationGenerator.class);
+    private static final String RESPONSE_FORMAT_NAME = "ai_dashboard_query_generation";
     private static final int MAX_GENERATION_ATTEMPTS = 2;
+    private static final String SYSTEM_PROMPT_TEMPLATE = """
+            Generate SQL and a visualization spec for the user's dashboard request.
+
+            %s
+
+            H2 guidance:
+            - generate SQL that is valid for H2
+            - prefer simple H2-compatible expressions and aliases
+            - when grouping by month or date buckets, use H2-safe expressions such as formatdatetime(issue_date, 'yyyy-MM')
+            - never use reserved SQL keywords as aliases such as month
+            - when ordering grouped results, prefer repeating the expression or use a safe alias like month_value
+
+            Hard requirements:
+            - use the exact view name ai_sales_invoice_view in the FROM clause
+            - never reference sales_invoice, raw_json, or any other table or view
+            - never use JOIN
+            - always add a LIMIT
+            - never query raw_json
+            - return strict JSON only
+            - never mention hidden data or request more schema
+            - never fabricate unavailable columns
+            - if a chart does not make sense, use TABLE
+
+            Visualization guidance:
+            - choose LINE or COLUMN for time or month trends
+            - choose BAR for top contractors or categories
+            - choose PIE or COLUMN for status or currency shares
+            - choose TABLE for detailed invoice lists
+
+            Expected JSON output:
+            {
+              "sql": "select ... from ai_sales_invoice_view ... limit 100",
+              "visualization": "TABLE | BAR | COLUMN | LINE | PIE",
+              "title": "Short title",
+              "xColumn": "column_name_or_null",
+              "yColumn": "column_name_or_null",
+              "seriesColumn": "column_name_or_null",
+              "explanation": "Short explanation"
+            }
+            """;
+    private static final String CORRECTION_PROMPT_TEMPLATE = """
+            The previous SQL was invalid and must be corrected.
+
+            Invalid SQL:
+            %s
+
+            Validation or execution error:
+            %s
+
+            Return a corrected JSON object only.
+            """;
 
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
     private final AiOpenAiProperties properties;
     private final SqlSafetyValidator sqlSafetyValidator;
 
-    public OpenAiSqlGenerator(
+    public OpenAiVisualizationGenerator(
             @Qualifier("openAiRestClient") RestClient openAiRestClient,
             ObjectMapper objectMapper,
             AiOpenAiProperties properties,
@@ -40,15 +91,15 @@ public class OpenAiSqlGenerator {
         this.sqlSafetyValidator = sqlSafetyValidator;
     }
 
-    public AiSqlGenerationResult generate(String apiKey, String prompt) {
+    public AiQueryGenerationResult generate(String apiKey, String prompt) {
         return generate(apiKey, prompt, null, null, MAX_GENERATION_ATTEMPTS);
     }
 
-    public AiSqlGenerationResult correct(String apiKey, String prompt, String invalidSql, String correctionFeedback) {
+    public AiQueryGenerationResult correct(String apiKey, String prompt, String invalidSql, String correctionFeedback) {
         return generate(apiKey, prompt, invalidSql, correctionFeedback, 1);
     }
 
-    private AiSqlGenerationResult generate(
+    private AiQueryGenerationResult generate(
             String apiKey,
             String prompt,
             String previousSql,
@@ -61,7 +112,7 @@ public class OpenAiSqlGenerator {
             throw new IllegalArgumentException("Prompt must not be blank");
         }
 
-        log.info("Attempting OpenAI SQL generation for /ai-dashboard with promptLength={}", prompt.length());
+        log.info("Attempting OpenAI query generation for /ai-dashboard with promptLength={}", prompt.length());
 
         String currentPreviousSql = previousSql;
         String currentValidationError = validationError;
@@ -80,28 +131,32 @@ public class OpenAiSqlGenerator {
                     throw new OpenAiSqlGenerationException("OpenAI returned an empty SQL generation response.");
                 }
 
-                AiSqlGenerationResult result = parseGenerationJson(extractGenerationJson(responseBody));
+                AiQueryGenerationResult result = parseGenerationJson(extractGenerationJson(responseBody));
                 currentPreviousSql = result.sql();
                 String validatedSql = sqlSafetyValidator.validateAndNormalize(result.sql());
-                log.info("OpenAI SQL generation completed with title={} attempt={}", result.title(), attempt);
-                return new AiSqlGenerationResult(validatedSql, result.title(), result.explanation());
+                log.info("OpenAI query generation completed with title={} attempt={}", result.title(), attempt);
+                return new AiQueryGenerationResult(
+                        validatedSql,
+                        result.title(),
+                        result.explanation(),
+                        result.visualizationSpec());
             } catch (SqlValidationException exception) {
                 currentValidationError = exception.getMessage();
-                log.warn("OpenAI SQL generation returned invalid SQL on attempt {}: {}", attempt, currentValidationError);
+                log.warn("OpenAI query generation returned invalid SQL on attempt {}: {}", attempt, currentValidationError);
                 if (attempt == maxAttempts) {
                     throw exception;
                 }
             } catch (RestClientResponseException exception) {
                 throw new OpenAiSqlGenerationException(sanitizeApiError(exception), exception);
             } catch (JsonProcessingException exception) {
-                throw new OpenAiSqlGenerationException("OpenAI returned SQL JSON that could not be parsed.", exception);
+                throw new OpenAiSqlGenerationException("OpenAI returned dashboard JSON that could not be parsed.", exception);
             } catch (RestClientException exception) {
-                throw new OpenAiSqlGenerationException("OpenAI SQL generation failed. Check the API key and try again later.",
+                throw new OpenAiSqlGenerationException("OpenAI dashboard generation failed. Check the API key and try again later.",
                         exception);
             }
         }
 
-        throw new OpenAiSqlGenerationException("OpenAI SQL generation could not produce valid SQL.");
+        throw new OpenAiSqlGenerationException("OpenAI dashboard generation could not produce valid SQL.");
     }
 
     String buildRequestBody(String prompt, String previousSql, String validationError) throws JsonProcessingException {
@@ -120,23 +175,34 @@ public class OpenAiSqlGenerator {
         return objectMapper.writeValueAsString(root);
     }
 
-    AiSqlGenerationResult parseGenerationJson(String generationJson) throws JsonProcessingException {
+    AiQueryGenerationResult parseGenerationJson(String generationJson) throws JsonProcessingException {
         JsonNode root = objectMapper.readTree(generationJson);
         String sql = root.path("sql").asText("").trim();
+        String visualization = root.path("visualization").asText("").trim();
         String title = root.path("title").asText("").trim();
+        String xColumn = nullableText(root.get("xColumn"));
+        String yColumn = nullableText(root.get("yColumn"));
+        String seriesColumn = nullableText(root.get("seriesColumn"));
         String explanation = root.path("explanation").asText("").trim();
 
         if (!StringUtils.hasText(sql)) {
-            throw new OpenAiSqlGenerationException("OpenAI returned SQL generation output without SQL.");
+            throw new OpenAiSqlGenerationException("OpenAI returned dashboard output without SQL.");
+        }
+        if (!StringUtils.hasText(visualization)) {
+            throw new OpenAiSqlGenerationException("OpenAI returned dashboard output without a visualization type.");
         }
         if (!StringUtils.hasText(title)) {
-            throw new OpenAiSqlGenerationException("OpenAI returned SQL generation output without a title.");
+            throw new OpenAiSqlGenerationException("OpenAI returned dashboard output without a title.");
         }
         if (!StringUtils.hasText(explanation)) {
-            throw new OpenAiSqlGenerationException("OpenAI returned SQL generation output without an explanation.");
+            throw new OpenAiSqlGenerationException("OpenAI returned dashboard output without an explanation.");
         }
 
-        return new AiSqlGenerationResult(sql, title, explanation);
+        return new AiQueryGenerationResult(
+                sql,
+                title,
+                explanation,
+                new AiVisualizationSpec(parseVisualizationType(visualization), xColumn, yColumn, seriesColumn));
     }
 
     String extractGenerationJson(String responseBody) throws JsonProcessingException {
@@ -159,46 +225,14 @@ public class OpenAiSqlGenerator {
             }
         }
 
-        throw new OpenAiSqlGenerationException("OpenAI returned a response without structured SQL content.");
+        throw new OpenAiSqlGenerationException("OpenAI returned a response without structured dashboard content.");
     }
 
     private ArrayNode buildInput(String prompt, String previousSql, String validationError) {
         ArrayNode input = objectMapper.createArrayNode();
-        input.add(createMessage("system", """
-                Generate SQL for the user's dashboard request.
-
-                %s
-
-                Hard requirements:
-                - use the exact view name ai_sales_invoice_view in the FROM clause
-                - never reference sales_invoice or any other table or view
-                - never use JOIN
-                - generate SQL that is valid for H2
-                - prefer simple H2-compatible expressions and aliases
-                - never use reserved SQL keywords as aliases such as month
-                - when ordering grouped results, prefer repeating the expression or use a safe alias like month_value
-
-                Expected JSON output:
-                {
-                  "sql": "select ... from ai_sales_invoice_view ... limit 100",
-                  "title": "Short title",
-                  "explanation": "Short explanation"
-                }
-
-                Return JSON only. Never request more schema. Never mention hidden data. Never fabricate unavailable columns.
-                """.formatted(sqlSafetyValidator.schemaDescription())));
+        input.add(createMessage("system", SYSTEM_PROMPT_TEMPLATE.formatted(sqlSafetyValidator.schemaDescription())));
         if (StringUtils.hasText(previousSql) && StringUtils.hasText(validationError)) {
-            input.add(createMessage("system", """
-                    The previous SQL was invalid and must be corrected.
-
-                    Invalid SQL:
-                    %s
-
-                    Validation error:
-                    %s
-
-                    Return a corrected JSON object only.
-                    """.formatted(previousSql, validationError)));
+            input.add(createMessage("system", CORRECTION_PROMPT_TEMPLATE.formatted(previousSql, validationError)));
         }
         input.add(createMessage("user", prompt));
         return input;
@@ -230,6 +264,19 @@ public class OpenAiSqlGenerator {
         title.put("minLength", 1);
         title.put("maxLength", 120);
 
+        ObjectNode visualization = propertiesNode.putObject("visualization");
+        visualization.put("type", "string");
+        ArrayNode visualizationEnum = visualization.putArray("enum");
+        visualizationEnum.add("TABLE");
+        visualizationEnum.add("BAR");
+        visualizationEnum.add("COLUMN");
+        visualizationEnum.add("LINE");
+        visualizationEnum.add("PIE");
+
+        propertiesNode.set("xColumn", nullableStringSchema(120));
+        propertiesNode.set("yColumn", nullableStringSchema(120));
+        propertiesNode.set("seriesColumn", nullableStringSchema(120));
+
         ObjectNode explanation = propertiesNode.putObject("explanation");
         explanation.put("type", "string");
         explanation.put("minLength", 1);
@@ -237,10 +284,44 @@ public class OpenAiSqlGenerator {
 
         ArrayNode required = schema.putArray("required");
         required.add("sql");
+        required.add("visualization");
         required.add("title");
+        required.add("xColumn");
+        required.add("yColumn");
+        required.add("seriesColumn");
         required.add("explanation");
         schema.put("additionalProperties", false);
         return schema;
+    }
+
+    private ObjectNode nullableStringSchema(int maxLength) {
+        ObjectNode nullable = objectMapper.createObjectNode();
+        ArrayNode anyOf = nullable.putArray("anyOf");
+
+        ObjectNode stringSchema = anyOf.addObject();
+        stringSchema.put("type", "string");
+        stringSchema.put("minLength", 1);
+        stringSchema.put("maxLength", maxLength);
+
+        ObjectNode nullSchema = anyOf.addObject();
+        nullSchema.put("type", "null");
+        return nullable;
+    }
+
+    private AiVisualizationSpec.VisualizationType parseVisualizationType(String visualization) {
+        try {
+            return AiVisualizationSpec.VisualizationType.valueOf(visualization.toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException exception) {
+            throw new OpenAiSqlGenerationException("OpenAI returned an unsupported visualization type.", exception);
+        }
+    }
+
+    private String nullableText(JsonNode node) {
+        if (node == null || node.isNull()) {
+            return null;
+        }
+        String value = node.asText("").trim();
+        return StringUtils.hasText(value) ? value : null;
     }
 
     private String sanitizeApiError(RestClientResponseException exception) {
@@ -251,12 +332,12 @@ public class OpenAiSqlGenerator {
             return "OpenAI rejected the request. Check the API key and try again.";
         }
         if (status == 429) {
-            return "OpenAI rate limits prevented SQL generation. Try again later.";
+            return "OpenAI rate limits prevented dashboard generation. Try again later.";
         }
         if (isModelError(errorMessage)) {
             return "The configured OpenAI model is unavailable for this API key. Check the configured model and try again.";
         }
-        return "OpenAI SQL generation could not be completed. Check the API key and try again later.";
+        return "OpenAI dashboard generation could not be completed. Check the API key and try again later.";
     }
 
     private String extractErrorMessage(String responseBody) {
